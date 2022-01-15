@@ -1,10 +1,12 @@
 # Gedit Backups
 *~
+# IDE
+.vscode/
 # Work
 work/
 #setup
 setup
-# backup files 
+# backup files
 */obsolete/
 */.ipynb_checkpoint/
 
