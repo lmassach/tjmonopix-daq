@@ -446,9 +446,11 @@ class TJMonoPix(Dut):
         high = ((dacunits+1)/2)+63
         self['CONF_SR']['SET_IBIAS'].setall(False)
         self['CONF_SR']['SET_IBIAS'][high:low] = (high - low + 1) * bitarray([True])
+        ibias = 1400.0 * ((dacunits + 1) / 128.0)
         if (printen == 1):
             logger.info('ibias = ' + str(dacunits))
-            logger.info('ibias = ' + str(1400.0 * ((dacunits + 1) / 128.0)) + 'nA')
+            logger.info('ibias = ' + str(ibias) + 'nA')
+        return ibias    
 
     def reset_ibias(self):
         """ To eliminate oscillations, set ibias to 0 and back to previous value
@@ -466,17 +468,11 @@ class TJMonoPix(Dut):
         high = ((dacunits+1)/2)+63
         self['CONF_SR']['SET_IDB'].setall(False)
         self['CONF_SR']['SET_IDB'][high:low] = (high - low + 1) * bitarray([True])
+        idb = 2240.0 * ((dacunits + 1) / 128.0))
         if (printen == 1):
             logger.info('idb = ' + str(dacunits))
-            logger.info('idb = ' + str(2240.0 * ((dacunits + 1) / 128.0)) + 'nA')
-
-    def get_idb_dacunits(self):
-        arg=np.argwhere(np.array(list(self['CONF_SR']['SET_IDB'].to01()),dtype=int))
-        low=arg[0,0]
-        high=arg[-1,0]
-        dacunits_low=128-low*2
-        dacunits_high= (high -(128 // 2))*2
-        return (dacunits_low+dacunits_high)/2
+            logger.info('idb = ' + str(idb + 'nA'))
+        return idb 
 
     def set_ithr_dacunits(self, dacunits, printen=False):
         dacunits=int(dacunits)
@@ -485,9 +481,12 @@ class TJMonoPix(Dut):
         high = ((dacunits+1)/2)+63
         self['CONF_SR']['SET_ITHR'].setall(False)
         self['CONF_SR']['SET_ITHR'][high:low] = (high - low + 1) * bitarray([True])
+        ithr = 17.5 * ((dacunits + 1) / 128.0)
         if printen:
             logger.info('ithr = ' + str(dacunits))
-            logger.info('ithr = ' + str(17.5 * ((dacunits + 1) / 128.0)) + 'nA')
+            logger.info('ithr = ' + str(ithr + 'nA'))
+        return ithr
+       
 
     def set_icasn_dacunits(self, dacunits, printen=False):
         assert -1 <= dacunits <= 127, 'Dac Units must be between 0 and 127'
@@ -496,9 +495,11 @@ class TJMonoPix(Dut):
             low = (128-(dacunits+1))/2
             high = ((dacunits+1)/2)+63
             self['CONF_SR']['SET_ICASN'][high:low] = (high - low + 1) * bitarray([True])
+        icasn = 560.0 * ((dacunits + 1) / 128.0)
         if (printen == 1):
             logger.info('icasn = ' + str(dacunits))
-            logger.info('icasn = ' + str(560.0 * ((dacunits + 1) / 128.0)) + 'nA')
+            logger.info('icasn = ' + str(icasn + 'nA'))
+        return icasn 
 
     def set_ireset_dacunits(self, dacunits, mode, printen=False):
         assert 0 <= dacunits <= 127, 'Dac Units must be between 0 and 127'
@@ -508,28 +509,45 @@ class TJMonoPix(Dut):
         self['CONF_SR']['SET_IRESET_BIT'] = mode
         self['CONF_SR']['SET_IRESET'].setall(False)
         self['CONF_SR']['SET_IRESET'][high:low] = (high - low + 1) * bitarray([True])
-        if (printen == 1):
-            if (mode == 1):
+        if (mode == 1):
+            ireset = 4.375 * ((dacunits + 1) / 128.0)
+            if (printen == 1):
                 logger.info('ireset = ' + str(dacunits) + ' high leakage mode')
-                logger.info('ireset = ' + str(4.375 * ((dacunits + 1) / 128.0)) + 'nA, high leakage mode')
-            else:
+                logger.info('ireset = ' + str(ireset) + 'nA, high leakage mode')
+            return ireset
+        else:
+            ireset = 43.75 * ((dacunits + 1) / 128.0) * 0.001
+            if (printen == 1):
                 logger.info('ireset = ' + str(dacunits) + ' low leakage mode')
-                logger.info('ireset = ' + str(43.75 * ((dacunits + 1) / 128.0)) + 'pA, low leakage mode')
+                logger.info('ireset = ' + str(ireset) + 'nA, low leakage mode')
+            return ireset
 
     def set_vreset_dacunits(self, dacunits, printen=False):
         assert 0 <= dacunits <= 127, 'Dac Units must be between 0 and 127'
         self['CONF_SR']['SET_VRESET_P'].setall(False)
         self['CONF_SR']['SET_VRESET_P'][dacunits] = True
+        vreset = ((1.8 / 127.0) * dacunits + 0.555)
         if printen:
-                logger.info('vreset = ' + str(((1.8 / 127.0) * dacunits + 0.555)) + 'V')
+            logger.info('vreset = ' + str(vreset) + 'V')
+        return vreset  
 
     def set_vh_dacunits(self, dacunits, print_en=False):
         dacunits=int(dacunits)
         assert 0 <= dacunits <= 127, 'Dac Units must be between 0 and 127'
         self['CONF_SR']['SET_VH'].setall(False)
         self['CONF_SR']['SET_VH'][dacunits] = True
+        vh = ((1.8 / 127.0) * dacunits + 0.385)
         if (print_en == 1):
-                logger.info('vh = ' + str(((1.8 / 127.0) * dacunits + 0.385)) + 'V')
+                logger.info('vh = ' + str(vh) + 'V')
+        return vh 
+
+    def get_idb_dacunits(self):
+        arg=np.argwhere(np.array(list(self['CONF_SR']['SET_IDB'].to01()),dtype=int))
+        low=arg[0,0]
+        high=arg[-1,0]
+        dacunits_low=128-low*2
+        dacunits_high= (high -(128 // 2))*2
+        return (dacunits_low+dacunits_high)/2
 
     def get_vh_dacunits(self):
         for i in range(0, 128):
