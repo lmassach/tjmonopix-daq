@@ -19,7 +19,7 @@ def save_param_and_noise(param_dac, param, noisy_pixels, disabled_pixels, output
 
  
 
-
+"""Save coordinates of the noisy pixels"""
 def save_noisy_pixels(noisy_pixels, output_file):
     if not (of_pixels.endswith('.txt')):  
         logger.error(".txt file needed \n") 
