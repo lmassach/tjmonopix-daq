@@ -2,6 +2,17 @@ import logging
 import time
 import numpy as np
 
+"""Save power status """
+def save_power_status(power_status, output_file):
+    if not output_file.endswith('.txt'):
+        logger.error(".txt file needed \n")
+        return
+    date = datetime.datetime.now()
+    power_status['date'] = date
+    with open('prova.txt', 'w') as convert_file:
+        convert_file.write(str(power_status))    
+    logger.info("Output file saved!\n\n")          
+
 
 """Save setted parameters (ith, icasn, ecc...) and some information about noisy pixel. Need to be passed: parameteters in dac units, parameters in physical units, number of noisy pixels, number of enabled pixels, outputfile.txt"""  
 def save_param_and_noise(param_dac, param, noisy_pixels, disabled_pixels, output_file):
@@ -16,9 +27,6 @@ def save_param_and_noise(param_dac, param, noisy_pixels, disabled_pixels, output
     logger.info("Output file '%s' saved!\n\n" % output_file)         
 
 
-
- 
-
 """Save coordinates of the noisy pixels"""
 def save_noisy_pixels(noisy_pixels, output_file):
     if not (of_pixels.endswith('.txt')):  
@@ -30,6 +38,3 @@ def save_noisy_pixels(noisy_pixels, output_file):
     logger.info("Output file saved!\n\n")         
 
 
-
-
-      
