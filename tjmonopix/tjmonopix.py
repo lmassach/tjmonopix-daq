@@ -276,7 +276,6 @@ class TJMonoPix(Dut):
                  status[pwr + ' OC'] = self[pwr].get_over_current()
             else:
                  status[pwr + ' [mA]'] = self[pwr].get_current(unit='mA')
-            
         return status
 
     def set_inj_all(self,vh=79,vl=44,inj_delay=800,inj_width=250,inj_n=100,inj_phase=0):
@@ -784,7 +783,7 @@ class TJMonoPix(Dut):
             
 ########################## scans  #############################################
     def get_occupancy(self, exp_time): 
-            self['data_rx'].set_en(True)
+        self['data_rx'].set_en(True)
         self.reset_ibias()
         for _ in range(10):
             self['fifo'].reset()
