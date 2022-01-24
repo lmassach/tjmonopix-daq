@@ -783,6 +783,22 @@ class TJMonoPix(Dut):
             return mask
             
 ########################## scans  #############################################
+    def get_occupancy(self, exp_time): 
+            self['data_rx'].set_en(True)
+        self.reset_ibias()
+        for _ in range(10):
+            self['fifo'].reset()
+            time.sleep(0.002) 
+        time.sleep(exp_time)
+        dat = self.interpret_data(self['fifo'].get_data())
+        print("Number of pixels counted: " % len(dat))
+        pix_tmp, cnt = np.unique(dat[["col","row"]], return_counts=True)
+        arg = np.argsort(cnt)
+        for a_i, a in enumerate(arg[::-1]):
+            print pix_tmp[a], cnt[a]
+            self.mask(3, pix_tmp[a][0], pix_tmp[a][1])
+        
+    
     def inj_scan_1pix(self, flavor, col, row, VL, VHLrange, start_dif, delay, width, repeat, noise_en, analog_en, sleeptime):
 
         hits = np.zeros((VHLrange + 1), dtype=int)
