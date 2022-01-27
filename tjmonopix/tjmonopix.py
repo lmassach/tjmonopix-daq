@@ -267,7 +267,7 @@ class TJMonoPix(Dut):
         for pwr in ['VDDP', 'VDDD', 'VDDA', 'VDDA_DAC']:
             self[pwr].set_enable(False)
 
-    def get_power_status(self):
+    def get_power_status(self, printen=False):
         status = {}
         for pwr in ['VDDP', 'VDDD', 'VDDA', 'VDDA_DAC', 'VPCSWSF', 'VPC', 'BiasSF']:
             status[pwr + ' [V]'] = self[pwr].get_voltage(unit='V')
@@ -276,6 +276,9 @@ class TJMonoPix(Dut):
                  status[pwr + ' OC'] = self[pwr].get_over_current()
             else:
                  status[pwr + ' [mA]'] = self[pwr].get_current(unit='mA')
+        if printen:
+            for k in status:
+                print("%s = %s" % (k, status[k]))
         return status
 
     def set_inj_all(self,vh=79,vl=44,inj_delay=800,inj_width=250,inj_n=100,inj_phase=0):
@@ -446,9 +449,9 @@ class TJMonoPix(Dut):
         self['CONF_SR']['SET_IBIAS'].setall(False)
         self['CONF_SR']['SET_IBIAS'][high:low] = (high - low + 1) * bitarray([True])
         ibias = 1400.0 * ((dacunits + 1) / 128.0)
-        if (printen == 1):
-            logger.info('ibias = ' + str(dacunits))
-            logger.info('ibias = ' + str(ibias) + 'nA')
+        if printen:
+            logger.info('ibias = %s', dacunits)
+            logger.info('ibias = %s nA', ibias)
         return ibias    
 
     def reset_ibias(self):
@@ -467,10 +470,10 @@ class TJMonoPix(Dut):
         high = ((dacunits+1)/2)+63
         self['CONF_SR']['SET_IDB'].setall(False)
         self['CONF_SR']['SET_IDB'][high:low] = (high - low + 1) * bitarray([True])
-        idb = 2240.0 * ((dacunits + 1) / 128.0))
-        if (printen == 1):
-            logger.info('idb = ' + str(dacunits))
-            logger.info('idb = ' + str(idb + 'nA'))
+        idb = 2240.0 * ((dacunits + 1) / 128.0)
+        if printen:
+            logger.info('idb = %s', dacunits)
+            logger.info('idb = %s nA', idb)
         return idb 
 
     def set_ithr_dacunits(self, dacunits, printen=False):
@@ -482,8 +485,8 @@ class TJMonoPix(Dut):
         self['CONF_SR']['SET_ITHR'][high:low] = (high - low + 1) * bitarray([True])
         ithr = 17.5 * ((dacunits + 1) / 128.0)
         if printen:
-            logger.info('ithr = ' + str(dacunits))
-            logger.info('ithr = ' + str(ithr + 'nA'))
+            logger.info('ithr = %s', dacunits)
+            logger.info('ithr = %s nA', ithr)
         return ithr
        
 
@@ -495,9 +498,9 @@ class TJMonoPix(Dut):
             high = ((dacunits+1)/2)+63
             self['CONF_SR']['SET_ICASN'][high:low] = (high - low + 1) * bitarray([True])
         icasn = 560.0 * ((dacunits + 1) / 128.0)
-        if (printen == 1):
-            logger.info('icasn = ' + str(dacunits))
-            logger.info('icasn = ' + str(icasn + 'nA'))
+        if printen:
+            logger.info('icasn = %s', dacunits)
+            logger.info('icasn = %s nA', icasn)
         return icasn 
 
     def set_ireset_dacunits(self, dacunits, mode, printen=False):
@@ -510,13 +513,13 @@ class TJMonoPix(Dut):
         self['CONF_SR']['SET_IRESET'][high:low] = (high - low + 1) * bitarray([True])
         if (mode == 1):
             ireset = 4.375 * ((dacunits + 1) / 128.0)
-            if (printen == 1):
+            if printen:
                 logger.info('ireset = ' + str(dacunits) + ' high leakage mode')
                 logger.info('ireset = ' + str(ireset) + 'nA, high leakage mode')
             return ireset
         else:
             ireset = 43.75 * ((dacunits + 1) / 128.0) * 0.001
-            if (printen == 1):
+            if printen:
                 logger.info('ireset = ' + str(dacunits) + ' low leakage mode')
                 logger.info('ireset = ' + str(ireset) + 'nA, low leakage mode')
             return ireset
@@ -536,7 +539,7 @@ class TJMonoPix(Dut):
         self['CONF_SR']['SET_VH'].setall(False)
         self['CONF_SR']['SET_VH'][dacunits] = True
         vh = ((1.8 / 127.0) * dacunits + 0.385)
-        if (print_en == 1):
+        if print_en:
                 logger.info('vh = ' + str(vh) + 'V')
         return vh 
 
@@ -559,7 +562,7 @@ class TJMonoPix(Dut):
         assert 0 <= dacunits <= 127, 'Dac Units must be between 0 and 127'
         self['CONF_SR']['SET_VL'].setall(False)
         self['CONF_SR']['SET_VL'][dacunits] = True
-        if (printen == 1):
+        if printen:
                 logger.info('vl = ' + str(((1.8 / 127.0) * dacunits + 0.385)) + 'V')
 
     def get_vl_dacunits(self):
@@ -572,7 +575,7 @@ class TJMonoPix(Dut):
         assert 0 <= dacunits <= 127, 'Dac Units must be between 0 and 127'
         self['CONF_SR']['SET_VCASN'].setall(False)
         self['CONF_SR']['SET_VCASN'][dacunits] = True
-        if (printen == 1):
+        if printen:
             logger.info('vcasn = ' + str(dacunits))
             logger.info('vcasn = ' + str(((1.8 / 127.0) * dacunits)) + 'V')
 
@@ -790,7 +793,7 @@ class TJMonoPix(Dut):
             time.sleep(0.002) 
         time.sleep(exp_time)
         dat = self.interpret_data(self['fifo'].get_data())
-        print("Number of pixels counted: " % len(dat))
+        print("Number of pixels counted: %d" % len(dat))
         pix_tmp, cnt = np.unique(dat[["col","row"]], return_counts=True)
         arg = np.argsort(cnt)
         for a_i, a in enumerate(arg[::-1]):
