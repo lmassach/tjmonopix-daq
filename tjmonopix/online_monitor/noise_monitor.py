@@ -53,5 +53,13 @@ def save_hits_per_pixels(hits, pixels, hits_per_pixel, output_file):
     logger.info("Output file '%s' saved!" % output_file)    
     
     
-    
+    """
+def occupancy(n_active_pixels, est_rate, total_area = , dead_time = 0.001): #dead time preso da 
+
+    active_area = n_active_pixels * #pixelarea
+    occupancy = 100 * active_area * est_rate * dead_time/total_area
+    print("The occupancy is: %.3f per 100", occupancy)
+    return occupancy
+
+    """
     
