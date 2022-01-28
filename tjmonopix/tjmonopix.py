@@ -796,10 +796,16 @@ class TJMonoPix(Dut):
         print("Number of pixels counted: %d" % len(dat))
         pix_tmp, cnt = np.unique(dat[["col","row"]], return_counts=True)
         arg = np.argsort(cnt)
+        pixel = np.zeros(len(cnt))
+        hits = np.zeros(len(cnt))
+        print('column, row) hits \n')
         for a_i, a in enumerate(arg[::-1]):
             print pix_tmp[a], cnt[a]
+            pixel[a] = pix_tmp[a]
+            hits[a] = cnt[a]
             self.mask(3, pix_tmp[a][0], pix_tmp[a][1])
-        
+        return pixel, hits
+       
     
     def inj_scan_1pix(self, flavor, col, row, VL, VHLrange, start_dif, delay, width, repeat, noise_en, analog_en, sleeptime):
 
