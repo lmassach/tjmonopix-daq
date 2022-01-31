@@ -12,9 +12,10 @@ def save_power_status(power_status, output_file):
         return
     date = datetime.datetime.now().isoformat()
     power_status['date'] = date
-    with open(output_file, 'w') as convert_file:
-        convert_file.write(str(power_status))    
-    logger.info("Output file saved!")          
+    with open(output_file, 'w') as ofs:
+        for k in power_status:
+            ofs.write("%s = %s\n" % (k, power_status[k]))    
+    logger.info("Output file '%s' saved!" % output_file)
 
 
 def save_param_and_noise(param_dac, param, noisy_pixels, disabled_pixels, output_file):
@@ -36,7 +37,29 @@ def save_noisy_pixels(noisy_pixels, output_file):
         logger.error(".txt file needed") 
         return
     header ='%s\nfl  row col' % datetime.datetime.now().isoformat()     
-    np.savetxt(output_file, noisy_pixels, header=header)        
-    logger.info("Output file saved!")         
+    np.savetxt(output_file, noisy_pixels, fmt='%d', header=header)        
+    logger.info("Output file '%s' saved!" % output_file)
 
 
+
+def save_hits_per_pixels(hits, pixels, hits_per_pixel, output_file):
+    """Save """
+    if not (output_file.endswith('.txt')):  
+        logger.error(".txt file needed") 
+        return
+    header ='%s, total number of hits %d' % (date, hits)
+    datas = np.array([pixels[0], pixels[1], hits_per_pixel, dtype=object)     #Assume che pixels è un array bidimensionale con righe e colonne, con hits per pixel un array della stessa dim
+    np.savetxt(output_file, numpy.transpose(datas), fmt='%d', header=header)            
+    logger.info("Output file '%s' saved!" % output_file)    
+    
+    
+    """
+def occupancy(n_active_pixels, est_rate, total_area = , dead_time = 0.001): #dead time preso da 
+
+    active_area = n_active_pixels * #pixelarea
+    occupancy = 100 * active_area * est_rate * dead_time/total_area
+    print("The occupancy is: %.3f per 100", occupancy)
+    return occupancy
+
+    """
+    
