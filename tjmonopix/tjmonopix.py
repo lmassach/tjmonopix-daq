@@ -277,7 +277,7 @@ class TJMonoPix(Dut):
             else:
                  status[pwr + ' [mA]'] = self[pwr].get_current(unit='mA')
         if printen:
-            for k in status:
+            for k in sorted(status):
                 print("%s = %s" % (k, status[k]))
         return status
 
@@ -796,15 +796,11 @@ class TJMonoPix(Dut):
         print("Number of pixels counted: %d" % len(dat))
         pix_tmp, cnt = np.unique(dat[["col","row"]], return_counts=True)
         arg = np.argsort(cnt)
-        pixel = np.zeros(len(cnt))
-        hits = np.zeros(len(cnt))
         print('column, row) hits \n')
         for a_i, a in enumerate(arg[::-1]):
             print pix_tmp[a], cnt[a]
-            pixel[a] = pix_tmp[a]
-            hits[a] = cnt[a]
-            self.mask(3, pix_tmp[a][0], pix_tmp[a][1])
-        return pixel, hits
+            #self.mask(3, pix_tmp[a][0], pix_tmp[a][1])
+        return pix_tmp, cnt
        
     
     def inj_scan_1pix(self, flavor, col, row, VL, VHLrange, start_dif, delay, width, repeat, noise_en, analog_en, sleeptime):
@@ -854,171 +850,127 @@ class TJMonoPix(Dut):
             hits[i] = cnt
         return hits
 
-    def auto_mask(self, th=2, step=10, exp=0.2):
-        logger.info("auto_mask th=%d step=%d exp=%f fl=%s" % (th, step, exp, self.SET['fl']))
+    def auto_mask(self, th=2, step=50, dt=0.2):
+        self.mask_all()
+        self.enable_data_rx()
+
+        # Set of noisy pixels to fill, as tuples (flavor, col, row)
+        noisy_pixels = set()
+
+        def find_new_noisy_pixels():
+            # Get hits and see which pixels are noisy
+            hits, pixels, hits_per_pixel = self.recv_data_summary(dt)
+            for px, n_hits in zip(pixels, hits_per_pixel):
+                if n_hits >= th:
+                    if 0 <= px['col'] <= 111 and 0 <= px['row'] <= 223:
+                        noisy_pixels.add((self.fl_n, px["col"], px["row"]))
+                    else:  # This happens due to a bug or communication error
+                        print("Warning: invalid pixel with col,row = %d,%d" % (px['col'], px['row']))
+            print("Got %d hits, total noisy pixels: %d" % (len(hits), len(noisy_pixels)))
+
+        # Iterate over MASKH to find noisy pixels
+        for i in np.append(range(step, 223, step), 223):
+            # Unmask step rows at a time
+            self['CONF_SR']['MASKH'][i:0] = (int(i) + 1) * bitarray('1')
+            # Mask noisy pixels that we found before
+            for flavor, col, row in noisy_pixels:
+                self.mask(flavor, col, row)
+            self['CONF_SR'].write()
+
+            print("Enable MASKH %d" % i)
+            find_new_noisy_pixels()
+
+        # Iterate over MASKV to find noisy pixels
+        for i in np.append(range(step, 111, step), 111):
+            # Unmask step columns at a time, while keeping all rows unmasked
+            self['CONF_SR']['MASKV'][i + (self.fl_n * 112):(self.fl_n * 112)] = (int(i) + 1) * bitarray('1')
+            # Mask noisy pixels that we found before
+            for flavor, col, row in noisy_pixels:
+                self.mask(flavor, col, row)
+            self['CONF_SR'].write()
+
+            print("Enable MASKV %d" % i)
+            find_new_noisy_pixels()
+
+        # Iterate over MASKD to find noisy pixels
+        for i in np.append(range(step, len(self['CONF_SR']['MASKD']) - 1, step), len(self['CONF_SR']['MASKD']) - 1):
+            # Unmask step diagonals at a time, while keeping all rows and cols unmasked
+            self['CONF_SR']['MASKD'][i:0] = (int(i)+1)*bitarray('1')
+            # Mask noisy pixels that we found before
+            for flavor, col, row in noisy_pixels:
+                self.mask(flavor, col, row)
+            self['CONF_SR'].write()
+
+            print("Enable MASKD %d" % i)
+            find_new_noisy_pixels()
+
+        # Mask all previously-found noisy pixels and check again
+        for flavor, col, row in noisy_pixels:
+            self.mask(flavor, col, row)
+        self['CONF_SR'].write()
+
+        print("Checking again after masking")
+        find_new_noisy_pixels()
+
+        # Mask additionally found noisy pixels
+        for flavor, col, row in noisy_pixels:
+            self.mask(flavor, col, row)
+        self['CONF_SR'].write()
+        self['fifo'].reset()
+        time.sleep(0.3)
+        self.reset_ibias()
+
+        print("Noisy pixels: %d" % len(noisy_pixels))
+        # Get masked pixels using a convenience function of the TJMonopix class
+        mask = self.get_disabled_pixel(maskV=self['CONF_SR']['MASKV'], maskH=self['CONF_SR']['MASKH'], maskD=self['CONF_SR']['MASKD'])
+        total_enabled = np.shape(np.argwhere(mask[(self.fl_n * 112):(self.fl_n + 1) * 112, :] != 0))[0]
+        total_disabled = np.shape(np.argwhere(mask[(self.fl_n * 112):(self.fl_n + 1) * 112, :] == 0))[0]
+        print("Enabled pixels: %d" % total_enabled)
+        print("Disabled pixels (noisy + unintentionally masked): %d" % total_disabled)
+        return noisy_pixels, total_disabled, np.argwhere(mask[(self.fl_n * 112):(self.fl_n + 1) * 112, :] == 0)
+    
+    ######## Our utilities #################
+    
+    def mask_all(self, unmask=False):
+        """Set mask for all pixels"""
         self['CONF_SR'][self.SET['fl']].setall(False)
         self['CONF_SR']['EN_OUT'][self.fl_n] = False
-        self['CONF_SR']['MASKD'].setall(False)
-        self['CONF_SR']['MASKH'].setall(False)
-        self['CONF_SR']['MASKV'].setall(False)
+        self['CONF_SR']['MASKD'].setall(unmask)
+        self['CONF_SR']['MASKH'].setall(unmask)
+        self['CONF_SR']['MASKV'].setall(unmask)
         self.write_conf()
 
         self['CONF_SR'][self.SET['fl']].setall(True)
         self.write_conf()
 
+    def unmask_all(self):
+        """Unmask all pixels"""
+        self.mask_all(True)
+        
+    def enable_data_rx(self, wait=0.1):
+        """Enable data rx FIFO"""
+        self['data_rx'].set_en(True)
         for _ in range(10):
             self["fifo"].reset()
-            time.sleep(0.1)
+            time.sleep(wait)
 
-        pix = np.empty(ROW * COL, dtype=[('flavor', 'u1'), ('col', 'u1'), ('row', '<u2')])
-        pix_i = 0
+    def recv_data(self, dt=0.2, wait_inj=False):
+        """Receive and parse data"""
+        self.reset_ibias()  # Reset Ibias and wait for oscillations to stabilize
+        self.reset_ibias()  # Oscillations may arise from configuration changes
+        self['fifo'].reset()  # Clear the buffer
+        if wait_inj:
+            self["inj"].start()
+            while not self['inj'].is_ready:
+                time.sleep(0.001)
+        time.sleep(dt)  # Wait integration time
+        return self.interpret_data(self['fifo'].get_data())  # Return array of hits
 
-        # Iterate over MASKH to find noisy pixels
-        for i in np.append(range(step, len(self['CONF_SR']['MASKH']), step), 223):
-            self['CONF_SR']['MASKD'].setall(False)
-            self['CONF_SR']['MASKV'].setall(False)
-            self['CONF_SR']['MASKH'].setall(False)
-            self['CONF_SR']['MASKH'][i:0] = (int(i) + 1) * bitarray('1')
-            for p_i in range(pix_i):
-                self.mask(pix[p_i]["flavor"], pix[p_i]['col'], pix[p_i]['row'])
-            self['CONF_SR'].write()
-
-            # Set ibias to zero and back again to eliminate oscillations from mask switching
-            self.reset_ibias()
-            self.reset_ibias()
-            self['fifo'].reset()
-            time.sleep(exp)
-            dat = self.interpret_data(self['fifo'].get_data())
-
-            pix_tmp, cnt = np.unique(dat[['col', 'row']], return_counts=True)
-            logging.info("Enable MASKH " + str(i) + " Noise data " + str(len(dat)))
-            if len(pix_tmp) > 100:
-                logging.error("Too many noisy pixels, try smaller step.")
-                return
-            for p_i, p in enumerate(pix_tmp):
-                if cnt[p_i] < th:
-                    pass
-                else:
-                    pix[pix_i]["col"] = p['col']
-                    pix[pix_i]["row"] = p['row']
-                    pix[pix_i]["flavor"] = self.fl_n
-                    pix_i = pix_i + 1
-            logging.info("Number of noisy pixels: %d" % pix_i)
-
-        # Iterate over MASKV to find noisy pixels
-        for i in np.append(range(step, 111, step), 111):
-            self['CONF_SR']['MASKD'].setall(False)
-            self['CONF_SR']['MASKV'].setall(False)
-            self['CONF_SR']['MASKH'].setall(True)
-            self['CONF_SR']['MASKV'][i + (self.fl_n * COL):(self.fl_n * COL)] = (int(i) + 1) * bitarray('1')
-            for p_i in range(pix_i):
-                self.mask(pix[p_i]["flavor"], pix[p_i]['col'], pix[p_i]['row'])
-            self['CONF_SR'].write()
-
-            # Set ibias to zero and back again to eliminate oscillations from mask switching
-            self.reset_ibias()
-            self.reset_ibias()
-
-            self['fifo'].reset()
-            time.sleep(exp)
-            dat = self.interpret_data(self['fifo'].get_data())
-
-            pix_tmp, cnt = np.unique(dat[['col', 'row']], return_counts=True)
-            logging.info("Enable MASKV " + str(i) + " Noise data " + str(len(dat)))
-            if len(pix_tmp) > 100:
-                logger.error("Too many noisy pixels, try smaller step.")
-                return
-            for p_i, p in enumerate(pix_tmp):
-                if cnt[p_i] < th:
-                    pass
-                else:
-                    pix[pix_i]["col"] = p['col']
-                    pix[pix_i]["row"] = p['row']
-                    pix[pix_i]["flavor"] = self.fl_n
-                    pix_i = pix_i + 1
-            logging.info("Number of noisy pixels: %d" % pix_i)
-
-        # Iterate over MASKD to find noisy pixels
-        for i in np.append(range(step, len(self['CONF_SR']['MASKD']) - 1, step), len(self['CONF_SR']['MASKD']) - 1):
-            self['CONF_SR']['MASKD'].setall(False)
-            self['CONF_SR']['MASKV'][(self.fl_n + 1) * COL-1:(self.fl_n * COL)] = (int(COL)) * bitarray('1')
-            self['CONF_SR']['MASKH'].setall(True)
-            self['CONF_SR']['MASKD'][i:0] = (int(i)+1)*bitarray('1')
-            for p_i in range(pix_i):
-                self.mask(pix[p_i]["flavor"], pix[p_i]['col'], pix[p_i]['row'])
-            self['CONF_SR'].write()
-
-            # Set ibias to zero and back again to eliminate oscillations from mask switching
-            self.reset_ibias()
-            self.reset_ibias()
-
-            self['fifo'].reset()
-            time.sleep(exp)
-            dat = self.interpret_data(self['fifo'].get_data())
-
-            pix_tmp, cnt = np.unique(dat[['col', 'row']], return_counts=True)
-            logging.info("Enable MASKD " + str(i) + " Noise data " + str(len(dat)))
-
-            if len(pix_tmp) > 100:
-                logger.error("Too many noisy pixels, try smaller step.")
-                return
-            for p_i, p in enumerate(pix_tmp):
-                if cnt[p_i] < th:
-                    pass
-                else:
-                    pix[pix_i]["col"] = p['col']
-                    pix[pix_i]["row"] = p['row']
-                    pix[pix_i]["flavor"] = self.fl_n
-                    pix_i = pix_i + 1
-            logging.info("Number of noisy pixels: %d" % pix_i)
-
-        # Mask all previously found pixels and check again
-        for p_i in range(pix_i):
-            self.mask(pix[p_i]["flavor"], pix[p_i]['col'], pix[p_i]['row'])
-        self['CONF_SR'].write()
-
-        # Set ibias to zero and back again to eliminate oscillations from mask switching
-        self.reset_ibias()
-        self.reset_ibias()
-
-        self['fifo'].reset()
-        time.sleep(exp)
-        dat = self.interpret_data(self['fifo'].get_data())
-        pix_tmp, cnt = np.unique(dat[['col', 'row']], return_counts=True)
-        logging.info("Checking noisy pixels after masking...")
-        logging.info("Data size: " + str(len(dat)))
-        if len(pix_tmp) > 100:
-            logger.error("Too many noisy pixels, try smaller step.")
-            return
-        for p_i, p in enumerate(pix_tmp):
-            if cnt[p_i] < th:
-                pass
-            else:
-                pix[pix_i]["col"] = p['col']
-                pix[pix_i]["row"] = p['row']
-                pix[pix_i]["flavor"] = self.fl_n
-                pix_i = pix_i + 1
-        logging.info("Number of noisy pixels: %d" % pix_i)
-
-        # Mask additionally found noisy pixels
-        for p_i in range(pix_i):
-            self.mask(pix[p_i]["flavor"], pix[p_i]['col'], pix[p_i]['row'])
-        self['CONF_SR'].write()
-        self['fifo'].reset()
-        time.sleep(0.3)
-        pix = np.unique(pix[:pix_i])
-        logging.info("Noisy pixels: " + str(pix))
-        logging.info("Total number of noisy pixels: " + str(len(pix)))
-
-        self.reset_ibias()
-
-        # Get mask from register settings
-        mask = self.get_disabled_pixel(maskV=self['CONF_SR']['MASKV'], maskH=self['CONF_SR']['MASKH'], maskD=self['CONF_SR']['MASKD'])
-        total_enabled = np.shape(np.argwhere(mask[(self.fl_n * 112):(self.fl_n + 1) * 112, :] != 0))[0]
-        total_disabled = np.shape(np.argwhere(mask[(self.fl_n * 112):(self.fl_n + 1) * 112, :] == 0))[0]
-        logging.info("Number of enabled pixels: {}".format(str(total_enabled)))
-        logging.info("Number of disabled pixels (noisy plus unintentionally masked): {}".format(str(total_disabled))) 
-        return pix
+    def recv_data_summary(self, dt=0.2, wait_inj=False):
+        """Same as above, but also return array of pixels with hits and number of hits per pixel"""
+        hits = self.recv_data(dt, wait_inj)
+        pixels, hits_per_pixel = np.unique(hits[["col", "row"]], return_counts=True)
+        return hits, pixels, hits_per_pixel
 
 
 if __name__ == '__main__':

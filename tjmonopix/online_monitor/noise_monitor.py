@@ -48,7 +48,7 @@ def save_hits_per_pixels(hits, pixels, hits_per_pixel, output_file):
         logger.error(".txt file needed") 
         return
     header ='%s, total number of hits %d' % (date, hits)
-    datas = np.array([pixels[0], pixels[1], hits_per_pixel, dtype=object)     #Assume che pixels è un array bidimensionale con righe e colonne, con hits per pixel un array della stessa dim
+    datas = np.array([pixels[0], pixels[1]], hits_per_pixel, dtype=object) #Assume che pixels sia un array bidimensionale con righe e colonne, con hits per pixel un array della stessa dim
     np.savetxt(output_file, numpy.transpose(datas), fmt='%d', header=header)            
     logger.info("Output file '%s' saved!" % output_file)    
     
