@@ -785,6 +785,7 @@ class TJMonoPix(Dut):
             return mask
             
 ########################## scans  #############################################
+
     def get_occupancy(self, exp_time): 
         self['data_rx'].set_en(True)
         self.reset_ibias()
@@ -799,7 +800,6 @@ class TJMonoPix(Dut):
         print('column, row) hits \n')
         for a_i, a in enumerate(arg[::-1]):
             print pix_tmp[a], cnt[a]
-            #self.mask(3, pix_tmp[a][0], pix_tmp[a][1])
         return pix_tmp, cnt
        
     
