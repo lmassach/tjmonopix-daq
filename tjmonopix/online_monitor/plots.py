@@ -233,6 +233,8 @@ def s_curve(injlist, inj_high, cnt, n_total_pulse, capacity):
     charge_threshold = approx_threshold * capacity
     print "approx. th = %d DAC = %.3f V = %g e-" % (approx_threshold_dac, approx_threshold, charge_threshold)
 
+    sigma_dac = injlist[np.argmin( np.abs(cnt - n_total_pulse/10) )] - injlist[np.argmin( np.abs(cnt - n_total_pulse * 9/10) )]
+    print "sigma %d DAC = " % (sigma_dac)  
 
     fig,ax = plt.subplots(1,1)
     ax.plot(injlist, cnt, "C0o", label="count")
@@ -249,4 +251,4 @@ def s_curve(injlist, inj_high, cnt, n_total_pulse, capacity):
     ax2.set_xbound(np.min(injlist) * CALCAP, np.max(injlist) * CALCAP)
     ax.legend()
     
-    return  approx_theshold
+    return  approx_threshold_dac, sigma_dac
