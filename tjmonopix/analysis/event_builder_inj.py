@@ -1,6 +1,6 @@
 import time
 import numpy as np
-from numba import njit
+#from numba import njit
 import tables
 import yaml
 
@@ -20,7 +20,7 @@ ROW_SIZE = 448
 #     0: only the data from injected pixel
 
 
-@njit
+#@njit
 def _build_inj(dat, injlist, thlist, phaselist, rowlist, inj_period, inj_n, mode, buf, scan_param_id, pre_inj, inj_id, inj_cnt):
     buf_i = 0
     dat_i = 0

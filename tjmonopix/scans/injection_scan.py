@@ -22,11 +22,12 @@ class InjectionScan(scan_base.ScanBase):
             
     def scan(self,**kwargs):
         """ List of kwargs
-            pix: list of pixel
-            n_mask_pix: number of pixels injected at onece
-            injlist: list of inj (inj_high-inj_low)
-            thlist: list of th
-            phaselist: list of phase
+            n_mask_col: number of columns injected at once
+            injlist: list of inj (inj_high-inj_low, injection pulse heights)
+            thlist: list of th (idb values in DAC units)
+            phaselist: list of phase (fine tuning of the injection time (???))
+            rowlist: list of rows to scan
+            collist: list of columns to scan
             with_mon: get timestamp of mon (mon will be enabled)
         """
         ####################
@@ -135,7 +136,7 @@ class InjectionScan(scan_base.ScanBase):
                     for th,row,inj,phase in inj_th_phase:
                         #if row>0 and self.dut['CONF_SR']['INJ_ROW'][row]!=True:
                         self.dut['CONF_SR']['INJ_ROW'].setall(False)
-                        self.dut['CONF_SR']['INJ_ROW'][row] = True
+                        self.dut['CONF_SR']['INJ_ROW'][row] = bitarray.bitarray('1')
                         #if th>0 and th!=self.dut.get_idb_dacunits():
                         self.dut.set_idb_dacunits(th,(debug & 0x1))
                         #if inj>0 and inj!=self.dut.get_vh_dacunits()-self.dut.get_vl_dacunits():

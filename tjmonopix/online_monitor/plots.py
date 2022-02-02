@@ -195,7 +195,7 @@ def line_fit(x, y, xlabel, ylabel, param_units, param_names = ['m', 'q'], dy = N
     set_plot(xlabel, "residui", title = '')
     return opt, pcov
     
-################################################################################################à
+################################################################################################
 
 def tj_plot(chip, dt=0.2, wait_inj=False):
     """Matrix 2d histogram"""
@@ -210,8 +210,7 @@ def tj_plot(chip, dt=0.2, wait_inj=False):
     plt.hist2d(hits["col"], hits["row"], bins=[112,224], range=[[0,112],[0,224]],
                )#norm=matplotlib.colors.LogNorm(vmin=1))
     plt.colorbar()
-    plt.xlabel('rows')
-    plt.ylabel('columns')
+    plt.xlabel('columns')
 
     # Histogram of the hits-per-pixel distribution (to choose noise threshold)
     plt.subplot(1, 2, 2)
@@ -219,36 +218,7 @@ def tj_plot(chip, dt=0.2, wait_inj=False):
     plt.yscale('log')
     plt.grid(axis="y")
     plt.xlabel('hits per pixel')
-    plt.ylabel('counts')    
+    plt.ylabel('counts')
+    
+    plt.tight_layout()
     return hits, pixels, hits_per_pixel
-    
-    
-
-def s_curve(injlist, inj_high, cnt, n_total_pulse, capacity):
-    """Plot the s-curve for one pixel """
-    conversion_factor = np.mean(inj_high/injlist)
-    
-    approx_threshold_dac = injlist[np.argmin( np.abs(cnt - n_total_pulse/2) )] + vl_dac
-    approx_threshold = approx_threshold_dac * conversion_factor
-    charge_threshold = approx_threshold * capacity
-    print "approx. th = %d DAC = %.3f V = %g e-" % (approx_threshold_dac, approx_threshold, charge_threshold)
-
-    sigma_dac = injlist[np.argmin( np.abs(cnt - n_total_pulse/10) )] - injlist[np.argmin( np.abs(cnt - n_total_pulse * 9/10) )]
-    print "sigma %d DAC = " % (sigma_dac)  
-
-    fig,ax = plt.subplots(1,1)
-    ax.plot(injlist, cnt, "C0o", label="count")
-    ax2 = ax.twiny()
-    ax3 = ax.twinx()
-    ax3.plot(injlist,tot,"C1x",label="ToT")
-    ax.plot([],[],"C1x",label="ToT")
-
-    ax.set_xlabel("Injection [ADC]")
-    ax.set_ylabel("#")
-    ax3.set_ylabel("ToT [40MHz]")
-    ax2.set_xlabel("Charge [e]")
-    ax.set_xbound(np.min(injlist), np.max(injlist))
-    ax2.set_xbound(np.min(injlist) * CALCAP, np.max(injlist) * CALCAP)
-    ax.legend()
-    
-    return  approx_threshold_dac, sigma_dac
