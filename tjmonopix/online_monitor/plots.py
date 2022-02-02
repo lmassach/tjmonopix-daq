@@ -224,10 +224,16 @@ def tj_plot(chip, dt=0.2, wait_inj=False):
     
     
 
-def s_curve(injlist, cnt, n_total_pulse, capacity):
+def s_curve(injlist, inj_high, cnt, n_total_pulse, capacity):
     """Plot the s-curve for one pixel """
-    approx_theshold = injlist[np.argmin( np.abs(cnt - n_total_pulse/2) )]
-    print "approx. th = %d DAC = %g e-" % (approx_theshold, approx_theshold*capacity)
+    conversion_factor = np.mean(inj_high/injlist)
+    
+    approx_threshold_dac = injlist[np.argmin( np.abs(cnt - n_total_pulse/2) )] + vl_dac
+    approx_threshold = approx_threshold_dac * conversion_factor
+    charge_threshold = approx_threshold * capacity
+    print "approx. th = %d DAC = %.3f V = %g e-" % (approx_threshold_dac, approx_threshold, charge_threshold)
+
+
     fig,ax = plt.subplots(1,1)
     ax.plot(injlist, cnt, "C0o", label="count")
     ax2 = ax.twiny()
@@ -240,7 +246,7 @@ def s_curve(injlist, cnt, n_total_pulse, capacity):
     ax3.set_ylabel("ToT [40MHz]")
     ax2.set_xlabel("Charge [e]")
     ax.set_xbound(np.min(injlist), np.max(injlist))
-    ax2.set_xbound(np.min(injlist)*CALCAP, np.max(injlist)*CALCAP)
+    ax2.set_xbound(np.min(injlist) * CALCAP, np.max(injlist) * CALCAP)
     ax.legend()
     
     return  approx_theshold
