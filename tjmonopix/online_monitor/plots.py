@@ -222,3 +222,20 @@ def tj_plot(chip, dt=0.2, wait_inj=False):
     
     plt.tight_layout()
     return hits, pixels, hits_per_pixel
+    
+def s_curve(injlist, cnt, tot, CALCAP):    
+    fig, ax = plt.subplots(1,1)
+    ax.plot(injlist, cnt, "C0o", label="count")
+    ax2 = ax.twiny()
+    ax3 = ax.twinx()
+    ax3.plot(injlist, tot,"C1x", label="ToT")
+    ax.plot([], [], "C1x", label="ToT")
+
+    ax.set_xlabel("Injection [ADC]")
+    ax.set_ylabel("#")
+    ax3.set_ylabel("ToT [40MHz]")
+    ax2.set_xlabel("Charge [e]")
+    ax.set_xbound(np.min(injlist), np.max(injlist))
+    ax2.set_xbound(np.min(injlist) * CALCAP, np.max(injlist) * CALCAP)
+    ax.legend()    
+    return 

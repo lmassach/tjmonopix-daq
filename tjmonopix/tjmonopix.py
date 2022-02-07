@@ -973,6 +973,41 @@ class TJMonoPix(Dut):
         return hits, pixels, hits_per_pixel
 
 
+    def injection_scan(self, injlist, inj_low_dac):
+        self['data_rx'].set_en(True)
+        for _ in range(5):
+            self['fifo'].reset()
+            time.sleep(0.002)
+        time.sleep(2)
+
+        cnt = np.empty(len(injlist))
+        tot = np.empty(len(injlist))
+        inj_high = np.empty(len(injlist))
+
+        print "inj[dac] inj[V] len(ix), len(ix_inj) aveToT"
+        for inj_i, inj in enumerate(injlist):
+            inj_high_dac = inj + inj_low_dac
+            inj_high_pulse = self.set_vh_dacunits(inj_high_dac, 0)
+            self.write_conf()
+            for _ in range(5):
+                self['fifo'].reset()
+                time.sleep(0.002)
+            self.set_monoread()
+            self["inj"].start()
+            while not self['inj'].is_ready:
+                time.sleep(0.001)
+            time.sleep(0.02)
+            
+            ix = self.interpret_data(self['fifo'].get_data())
+            ix_inj = ix[np.bitwise_and(ix["col"] == col_to_inject, ix["row"] == row_to_inject)]
+            cnt[inj_i] = len(ix_inj)
+            tot[inj_i] = np.average((ix_inj["te"]-ix_inj["le"]) & 0x3F)
+            inj_high[inj_i] = inj_high_pulse
+            print inj, inj_high_pulse, len(ix), len(ix_inj), tot[inj_i]
+        return cnt, tot, inj_high
+
+
+
 if __name__ == '__main__':
     chip = TJMonoPix()
     chip.init()
