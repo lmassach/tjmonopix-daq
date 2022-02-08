@@ -1,7 +1,7 @@
 import numpy as np
  
  
-def find_approx_threshold(injlist, inj_high, cnt, repeat=100, CALCAP):
+def find_approx_threshold(injlist, inj_high, cnt, CALCAP, repeat=100):
     """Find the threshold and the sigma as the middle point and the 68% of the width of the s-curve  """
     conversion_factor = np.mean(inj_high/injlist)
     

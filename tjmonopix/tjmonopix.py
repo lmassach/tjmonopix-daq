@@ -973,7 +973,7 @@ class TJMonoPix(Dut):
         return hits, pixels, hits_per_pixel
 
 
-    def injection_scan(self, injlist, inj_low_dac):
+    def injection_scan(self, injlist, inj_low_dac, col_to_inject, row_to_inject):
         self['data_rx'].set_en(True)
         for _ in range(5):
             self['fifo'].reset()
