@@ -1006,7 +1006,26 @@ class TJMonoPix(Dut):
             print inj, inj_high_pulse, len(ix), len(ix_inj), tot[inj_i]
         return cnt, tot, inj_high
 
-
+    
+    
+    
+    def select_injection(self, col_to_inject, row_to_inject = None):
+        """Select the pixel or the column to inject """
+        self['CONF_SR']['INJ_ROW'].setall(False)
+        self['CONF_SR']['COL_PULSE_SEL'].setall(False)
+        
+        if row_to_inject == None:
+            self['CONF_SR']['INJ_ROW'].setall(True)
+            self['CONF_SR']['COL_PULSE_SEL'][col_to_inject] = True  
+            print("col injected: ", col_to_inject)
+        else:
+            self.enable_injection(3, col_to_inject, row_to_inject)
+            print("pixel (col and row) injected", col_to_inject, row_to_inject)
+        self.write_conf()          
+        return  
+        
+        
+        
 
 if __name__ == '__main__':
     chip = TJMonoPix()

@@ -56,6 +56,7 @@ class InjectionScan(scan_base.ScanBase):
             
         rowlist=kwargs.pop("rowlist")
         inj_th_phase = np.reshape(np.stack(np.meshgrid(thlist,rowlist,injlist,phaselist),axis=4),[-1,4])
+        print("thlist,rowlist,injlist,phaselist", inj_th_phase)
         
         with_mon=kwargs.pop("with_mon")
         
@@ -134,6 +135,7 @@ class InjectionScan(scan_base.ScanBase):
                 with self.readout(scan_param_id=scan_param_id,fill_buffer=False,clear_buffer=True,
                               readout_interval=0.001):
                     for th,row,inj,phase in inj_th_phase:
+                        print("row in rowlist", row)
                         #if row>0 and self.dut['CONF_SR']['INJ_ROW'][row]!=True:
                         self.dut['CONF_SR']['INJ_ROW'].setall(False)
                         self.dut['CONF_SR']['INJ_ROW'][row] = bitarray.bitarray('1')
