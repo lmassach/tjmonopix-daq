@@ -14,7 +14,7 @@ def init(socket_address="tcp://127.0.0.1:5500"):
     logging.info('Creating socket connection to server %s', socket_address)
     socket = context.socket(zmq.PUB)  # publisher socket
     socket.bind(socket_address)
-    send_meta_data(socket, None, name='Reset')  # send reset to indicate a new scan
+    send_meta_data(socket, None, name='Reset')  # send reset to indicate a new scan   
     return socket
 
 

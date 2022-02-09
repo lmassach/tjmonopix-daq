@@ -56,7 +56,7 @@ class InjectionScan(scan_base.ScanBase):
             
         rowlist=kwargs.pop("rowlist")
         inj_th_phase = np.reshape(np.stack(np.meshgrid(thlist,rowlist,injlist,phaselist),axis=4),[-1,4])
-        print("thlist,rowlist,injlist,phaselist", inj_th_phase)
+        #print("thlist,rowlist,injlist,phaselist", inj_th_phase)
         
         with_mon=kwargs.pop("with_mon")
         
@@ -187,14 +187,18 @@ class InjectionScan(scan_base.ScanBase):
         ##interpret and event_build
         import tjmonopix.analysis.interpreter_idx as interpreter_idx
         interpreter_idx.interpret_idx_h5(fraw,fhit,debug=0x8+0x3)
+        print("A")
         #self.logger.info('interpreted %s'%(fhit))
         import tjmonopix.analysis.event_builder_inj as event_builder_inj
         event_builder_inj.build_inj_h5(fhit,fraw,fev,n=10000000)
         #self.logger.info('timestamp assigned %s'%(fev))
-        
+        print("b")
+
         ##analyze
         import tjmonopix.analysis.analyze_hits as analyze_hits
         ana=analyze_hits.AnalyzeHits(fev,fraw)
+        print("v")
+
         ana.init_hist_ev()
         ana.init_cnts()
         ana.run()
