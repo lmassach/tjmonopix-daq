@@ -1016,8 +1016,9 @@ class TJMonoPix(Dut):
         
         if row_to_inject == None:
             self['CONF_SR']['INJ_ROW'].setall(True)
-            self['CONF_SR']['COL_PULSE_SEL'][col_to_inject] = True  
+            self['CONF_SR']['COL_PULSE_SEL'][(3 * 112) + col_to_inject] = True  
             print("col injected: ", col_to_inject)
+
         else:
             self.enable_injection(3, col_to_inject, row_to_inject)
             print("pixel (col and row) injected", col_to_inject, row_to_inject)
@@ -1025,6 +1026,7 @@ class TJMonoPix(Dut):
         return  
         
         
+  
         
 
 if __name__ == '__main__':
