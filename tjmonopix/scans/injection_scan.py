@@ -56,7 +56,6 @@ class InjectionScan(scan_base.ScanBase):
             
         rowlist=kwargs.pop("rowlist")
         inj_th_phase = np.reshape(np.stack(np.meshgrid(thlist,rowlist,injlist,phaselist),axis=4),[-1,4])
-        #print("thlist,rowlist,injlist,phaselist", inj_th_phase)
         
         with_mon=kwargs.pop("with_mon")
         
@@ -122,12 +121,24 @@ class InjectionScan(scan_base.ScanBase):
             ## start read fifo 
             cnt=0
             for mask_i in range(mask_n):
+                
+                self.dut['CONF_SR']['EN_HV'].setall(False)
+
+            
+            
                 self.dut['CONF_SR']['INJ_ROW'].setall(False)
                 self.dut['CONF_SR']['COL_PULSE_SEL'].setall(False)
                 c_tmp=np.ones(n_mask_col,dtype=int)*-1
                 for c_i,c in enumerate(collist[mask_i::mask_n]):
+
+                    self.dut['CONF_SR']['EN_HV'][c//2] = True
+
+
                     self.dut['CONF_SR']['COL_PULSE_SEL'][(self.dut.fl_n * 112) + c ] = 1
                     c_tmp[c_i]=c
+                    
+
+
                 self.scan_param_table.row['collist'] = c_tmp
                 self.scan_param_table.row['scan_param_id'] = scan_param_id
                 self.scan_param_table.row.append()
@@ -135,7 +146,14 @@ class InjectionScan(scan_base.ScanBase):
                 with self.readout(scan_param_id=scan_param_id,fill_buffer=False,clear_buffer=True,
                               readout_interval=0.001):
                     for th,row,inj,phase in inj_th_phase:
-                        print("row in rowlist", row)
+                        
+                        self.dut['CONF_SR']['MASKV'].setall(False)
+                        self.dut['CONF_SR']['MASKH'].setall(False)
+                        self.dut['CONF_SR']['MASKD'].setall(False)
+                        self.dut['CONF_SR']['MASKH'][row] = True
+                        print("row", row)
+                        
+                        
                         #if row>0 and self.dut['CONF_SR']['INJ_ROW'][row]!=True:
                         self.dut['CONF_SR']['INJ_ROW'].setall(False)
                         self.dut['CONF_SR']['INJ_ROW'][row] = bitarray.bitarray('1')
@@ -187,18 +205,14 @@ class InjectionScan(scan_base.ScanBase):
         ##interpret and event_build
         import tjmonopix.analysis.interpreter_idx as interpreter_idx
         interpreter_idx.interpret_idx_h5(fraw,fhit,debug=0x8+0x3)
-        print("A")
         #self.logger.info('interpreted %s'%(fhit))
         import tjmonopix.analysis.event_builder_inj as event_builder_inj
         event_builder_inj.build_inj_h5(fhit,fraw,fev,n=10000000)
         #self.logger.info('timestamp assigned %s'%(fev))
-        print("b")
-
+        
         ##analyze
         import tjmonopix.analysis.analyze_hits as analyze_hits
         ana=analyze_hits.AnalyzeHits(fev,fraw)
-        print("v")
-
         ana.init_hist_ev()
         ana.init_cnts()
         ana.run()
@@ -226,3 +240,8 @@ if __name__ == "__main__":
     scan.start(**local_configuration)
     scan.analyze()
     scan.plot()
+    
+    
+    
+    
+
