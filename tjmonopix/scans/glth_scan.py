@@ -40,12 +40,12 @@ class GlthScan(injection_scan.InjectionScan):
         fhit=fraw[:-7]+'hit.h5'
         fev=fraw[:-7]+'ev.h5'
         super(GlthScan, self).analyze()
-        
+
         import monopix_daq.analysis.analyze_cnts as analyze_cnts
         ana=analyze_cnts.AnalyzeCnts(fev,fraw)
         ana.init_scurve_fit("th")
         ana.run()
-        
+
         with tb.open_file(fev) as f:
            dat=f.root.ScurveFit[:]
         return dat
@@ -70,16 +70,16 @@ class GlthScan(injection_scan.InjectionScan):
                 plotting.table_1value(dat,page_title="Chip configuration")
 
                 dat=yaml.safe_load(f.root.meta_data.attrs.pixel_conf)
-                
+
             with tb.open_file(fev) as f:
                 ## Pixel configuration page
                 injected=f.root.Injected[:]
                 plotting.plot_2d_pixel_4(
                     [injected,injected,dat["MONITOR_EN"],dat["TRIM_EN"]],
                     page_title="Pixel configuration",
-                    title=["Preamp","Inj","Mon","TDAC"], 
+                    title=["Preamp","Inj","Mon","TDAC"],
                     z_min=[0,0,0,0], z_max=[1,1,1,15])
-            
+
                 for p in np.argwhere(injected):
                     res,col,row=get_scurve(f.root,p[0],p[1])
                     plotting.plot_scurve(res,
@@ -88,7 +88,7 @@ class GlthScan(injection_scan.InjectionScan):
                             y_min=0,
                             y_max=inj_n*1.5,
                             reverse=True)
-                            
+
 def get_scurve(fhit_root,col,row):
     x=fhit_root.ScurveFit.attrs.thlist
     dat=fhit_root.Cnts[:]
@@ -100,7 +100,7 @@ def get_scurve(fhit_root,col,row):
     dat=fhit_root.ScurveFit[:]
     dat=dat[np.bitwise_and(dat["col"]==col,dat["row"]==row)]
     if len(dat)!=1:
-        print "onepix_scan.get_scurve() 1error!!"
+        print("onepix_scan.get_scurve() 1error!!")
     res[0]["x"]=x
     res[0]["y"]=cnt
     res[0]["A"]=dat[0]["A"]
@@ -113,17 +113,17 @@ def get_scurve(fhit_root,col,row):
 if __name__ == "__main__":
     from monopix_daq import monopix
     import argparse
-    
+
     parser = argparse.ArgumentParser(usage="analog_scan.py xxx_scan",
              formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--config_file", type=str, default=None)
     parser.add_argument('-t',"--th", type=float, default=None)
     parser.add_argument("--tdac", type=float, default=None)
-    parser.add_argument('-ib',"--inj_start", type=float, 
+    parser.add_argument('-ib',"--inj_start", type=float,
          default=local_configuration["injlist"][0])
-    parser.add_argument('-ie',"--inj_stop", type=float, 
+    parser.add_argument('-ie',"--inj_stop", type=float,
          default=local_configuration["injlist"][-1])
-    parser.add_argument('-is',"--inj_step", type=float, 
+    parser.add_argument('-is',"--inj_step", type=float,
          default=local_configuration["injlist"][1]-local_configuration["injlist"][0])
     parser.add_argument("-n","--n_mask_pix",type=int,default=local_configuration["n_mask_pix"])
     args=parser.parse_args()
@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     m=monopix.Monopix()
     scan = ThScan(m,online_monitor_addr="tcp://127.0.0.1:6500")
-    
+
     if args.config_file is not None:
         m.load_config(args.config_file)
     if args.th is not None:
@@ -140,8 +140,8 @@ if __name__ == "__main__":
     if args.tdac is not None:
         m.set_tdac(args.tdac)
     en=np.copy(m.dut.PIXEL_CONF["PREAMP_EN"][:,:])
-    local_configuration["pix"]=np.argwhere(en)    
-    
+    local_configuration["pix"]=np.argwhere(en)
+
     scan.start(**local_configuration)
     scan.analyze()
     scan.plot()

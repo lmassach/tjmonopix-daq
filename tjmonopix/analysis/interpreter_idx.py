@@ -6,7 +6,7 @@ import tables
 
 hit_idx_dtype=np.dtype([("col","<u1"),("row","<u1"),("le","<u1"),("te","<u1"),("cnt","<u4"),
                     ("timestamp","<u8"),("scan_param_id","<u4")])
-                    
+
 @njit
 def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                ts_timestamp,ts_pre,ts_flg,ts_cnt,
@@ -39,7 +39,7 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
             le = (r & 0x7E00000) >> 21
             noise = (r & 0x8000000) >> 27
            #if debug & 0x4 ==0x4:
-               #print r_i,hex(r),rx_flg,"ts=",hex(timestamp),col,row,noise
+               #print(r_i,hex(r),rx_flg,"ts=",hex(timestamp),col,row,noise)
 
             if rx_flg==0x0:
               rx_flg=0x1
@@ -54,14 +54,14 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                buf[buf_i]["scan_param_id"]=r_i+start
                buf_i=buf_i+1
                rx_flg=0
-           
+
         elif (r & 0xF0000000 == 0x10000000):
             timestamp = (timestamp & TJ_MASK_UPPER) | (
                 np.uint64(r)<<np.uint64(4) & TJ_MASK_LOWER)
            #if debug & 0x4 ==0x4:
-               #print r_i,hex(r),rx_flg,"ts=",hex(timestamp),le,te
+               #print(r_i,hex(r),rx_flg,"ts=",hex(timestamp),le,te)
                #pass
-               
+
             if rx_flg==0x1:
               rx_flg=0x2
             else:
@@ -80,8 +80,8 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
             timestamp = (timestamp & TJ_MASK_LOWER) | (
                 (np.uint64(r) << np.uint64(32)) & TJ_MASK_UPPER)
            #if debug & 0x4 ==0x4:
-               #print r_i,hex(r),rx_flg,"ts=",hex(timestamp)
-               
+               #print(r_i,hex(r),rx_flg,"ts=",hex(timestamp))
+
             if rx_flg == 0x2:
                buf[buf_i]["row"]=row
                buf[buf_i]["col"]=col
@@ -103,17 +103,17 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                buf[buf_i]["scan_param_id"]=r_i+start
                buf_i=buf_i+1
                rx_flg=0
-              
+
         ########################
         ### TIMESTMP
         ########################
-        elif r & 0xFF000000 == 0x40000000: 
+        elif r & 0xFF000000 == 0x40000000:
             pass ## TODO get count
         elif r & 0xFF000000 == 0x41000000: ## timestamp
             ts_timestamp = (ts_timestamp & TS_MASK1) | np.uint64(r & TS_MASK_DAT)
             ts_cnt=ts_cnt+1
             #if debug & 0x4 ==0x4:
-                #print r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt
+                #print(r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt)
 
             if ts_flg==2:
                ts_flg=0
@@ -142,7 +142,7 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
         elif r & 0xFF000000 == 0x42000000: ## timestamp
             ts_timestamp=(ts_timestamp & TS_MASK2) + (np.uint64(r & TS_MASK_DAT) << np.uint64(24))
             #if debug & 0x4 ==0x4:
-                #print r_i,hex(r),"timestamp2",hex(ts_timestamp),
+                #print(r_i,hex(r),"timestamp2",hex(ts_timestamp),)
 
             if ts_flg==0x1:
               ts_flg=0x2
@@ -162,7 +162,7 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
             ts_pre=ts_timestamp
             ts_timestamp=(ts_timestamp & TS_MASK3)+ (np.uint64(r & TS_MASK_DAT) << np.uint64(48))
             #if debug & 0x4 ==0x4:
-               #print r_i,hex(r),"timestamp3",hex(ts_timestamp),
+               #print(r_i,hex(r),"timestamp3",hex(ts_timestamp),)
 
             if ts_flg==0x0:
                ts_flg=0x1
@@ -176,9 +176,9 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                    buf[buf_i]["cnt"]=r
                    buf[buf_i]["scan_param_id"]=r_i+start
                    buf_i=buf_i+1
-               ts_flg=0x0  
+               ts_flg=0x0
                err=err+1
-               
+
         ########################
         ### TIMESTMP160 INJ
         ########################
@@ -188,7 +188,7 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
             ts3_timestamp = (ts3_timestamp & np.uint64(0xFFFFFFFFFF000000)) | np.uint64( r & TS_MASK_DAT )
             ts3_cnt = ts3_cnt+1
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt
+            #print(r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt)
 
             if ts3_flg == 2:
                 ts3_flg = 0
@@ -213,13 +213,13 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                    buf[buf_i]["cnt"]=r
                    buf[buf_i]["scan_param_id"]=r_i+start
                    buf_i=buf_i+1
-                ts3_flg = 0 
+                ts3_flg = 0
                 err=err+1
         elif r & 0xFF000000 == 0x52000000:  # timestamp
             ts3_timestamp = (ts3_timestamp & np.uint64(0xFFFF000000FFFFFF)) | \
                 (np.uint64(r & TS_MASK_DAT) << np.uint64(24))
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp1",hex(ts_timestamp)
+            #print(r_i,hex(r),"timestamp1",hex(ts_timestamp))
 
             if ts3_flg == 0x1:
                 ts3_flg = 0x2
@@ -233,12 +233,12 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                    buf[buf_i]["cnt"]=r
                    buf[buf_i]["scan_param_id"]=r_i+start
                    buf_i=buf_i+1
-                ts3_flg = 0 
+                ts3_flg = 0
                 err=err+1
         elif r & 0xFF000000 == 0x53000000:  # timestamp
             ts3_timestamp = (ts3_timestamp & np.uint64(0x0000FFFFFFFFFFFF)) | (np.uint64(r & np.uint64(0x000000000000FFFF)) << np.uint64(48))
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"ts2_timestamp",hex(ts_timestamp)
+            #print(r_i,hex(r),"ts2_timestamp",hex(ts_timestamp))
 
             if ts3_flg == 0x0:
                 ts3_flg = 0x1
@@ -252,7 +252,7 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                    buf[buf_i]["cnt"]=r
                    buf[buf_i]["scan_param_id"]=r_i+start
                    buf_i=buf_i+1
-                ts3_flg = 0 
+                ts3_flg = 0
                 err=err+1
 
         ########################
@@ -264,7 +264,7 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
             ts2_timestamp = (ts2_timestamp & np.uint64(0xFFFFFFFFFF000000)) | np.uint64( r & TS_MASK_DAT )
             ts2_cnt = ts2_cnt+1
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt
+            #print(r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt)
 
             if ts2_flg == 2:
                 ts2_flg = 0
@@ -289,13 +289,13 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                    buf[buf_i]["cnt"]=r
                    buf[buf_i]["scan_param_id"]=r_i+start
                    buf_i=buf_i+1
-                ts2_flg = 0   
-                err=err+1 
+                ts2_flg = 0
+                err=err+1
         elif r & 0xFF000000 == 0x62000000:  # timestamp
             ts2_timestamp = (ts2_timestamp & np.uint64(0xFFFF000000FFFFFF)) | \
                 (np.uint64(r & TS_MASK_DAT) << np.uint64(24))
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp1",hex(ts_timestamp)
+            #print(r_i,hex(r),"timestamp1",hex(ts_timestamp))
 
             if ts2_flg == 0x1:
                 ts2_flg = 0x2
@@ -309,14 +309,14 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                    buf[buf_i]["cnt"]=r
                    buf[buf_i]["scan_param_id"]=r_i+start
                    buf_i=buf_i+1
-                ts2_flg = 0 
-                err=err+1   
+                ts2_flg = 0
+                err=err+1
         elif r & 0xFF000000 == 0x63000000:  # timestamp
             ts2_timestamp = (ts2_timestamp & np.uint64(0x0000FFFFFFFFFFFF)) | \
                 (np.uint64(r & TS_DIV_MASK_DAT) << np.uint64(48))
             ts2_tot = (np.uint64(r & TS_MASK_TOT) >> np.uint64(8))
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"ts2_timestamp",hex(ts_timestamp)
+            #print(r_i,hex(r),"ts2_timestamp",hex(ts_timestamp))
 
             if ts2_flg == 0x0:
                 ts2_flg = 0x1
@@ -330,13 +330,13 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                    buf[buf_i]["cnt"]=r
                    buf[buf_i]["scan_param_id"]=r_i+start
                    buf_i=buf_i+1
-                ts2_flg = 0  
+                ts2_flg = 0
                 err=err+1
         elif r & 0xFF000000 == 0x65000000:  # timestamp
             ts2t_timestamp = (ts2t_timestamp & np.uint64(0xFFFFFFFFFF000000)) | np.uint64( r & TS_MASK_DAT )
             ts2t_cnt = ts2t_cnt+1
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt
+            #print(r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt)
 
             if ts2t_flg == 2:
                 ts2t_flg = 0
@@ -361,13 +361,13 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                    buf[buf_i]["cnt"]=r
                    buf[buf_i]["scan_param_id"]=r_i+start
                    buf_i=buf_i+1
-                ts2t_flg = 0   
-                err=err+1 
+                ts2t_flg = 0
+                err=err+1
         elif r & 0xFF000000 == 0x66000000:  # timestamp
             ts2t_timestamp = (ts2t_timestamp & np.uint64(0xFFFF000000FFFFFF)) | \
                 (np.uint64(r & TS_MASK_DAT) << np.uint64(24))
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp1",hex(ts_timestamp)
+            #print(r_i,hex(r),"timestamp1",hex(ts_timestamp))
 
             if ts2t_flg == 0x1:
                 ts2t_flg = 0x2
@@ -381,8 +381,8 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                    buf[buf_i]["cnt"]=r
                    buf[buf_i]["scan_param_id"]=r_i+start
                    buf_i=buf_i+1
-                ts2t_flg = 0 
-                err=err+1   
+                ts2t_flg = 0
+                err=err+1
         elif r & 0xFF000000 == 0x67000000:  # timestamp
             ts2t_timestamp = (ts2t_timestamp & np.uint64(0x0000FFFFFFFFFFFF)) | \
                 (np.uint64(r & TS_DIV_MASK_DAT) << np.uint64(48))
@@ -398,9 +398,9 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                    buf[buf_i]["cnt"]=r
                    buf[buf_i]["scan_param_id"]=r_i+start
                    buf_i=buf_i+1
-                ts2t_flg = 0  
+                ts2t_flg = 0
                 err=err+1
-   
+
         ########################
         ### TIMESTMP160 TLU
         ########################
@@ -410,7 +410,7 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
             ts4_timestamp = (ts4_timestamp & np.uint64(0xFFFFFFFFFF000000)) | np.uint64( r & TS_MASK_DAT )
             ts4_cnt = ts4_cnt+1
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt
+            #print(r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt)
 
             if ts4_flg == 2:
                 ts4_flg = 0
@@ -435,13 +435,13 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                    buf[buf_i]["cnt"]=r
                    buf[buf_i]["scan_param_id"]=r_i+start
                    buf_i=buf_i+1
-                ts4_flg = 0  
+                ts4_flg = 0
                 err=err+1
         elif r & 0xFF000000 == 0x72000000:  # timestamp
             ts4_timestamp = (ts4_timestamp & np.uint64(0xFFFF000000FFFFFF)) | \
                 (np.uint64(r & TS_MASK_DAT) << np.uint64(24))
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp1",hex(ts_timestamp)
+            #print(r_i,hex(r),"timestamp1",hex(ts_timestamp))
 
             if ts4_flg == 0x1:
                 ts4_flg = 0x2
@@ -455,12 +455,12 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                    buf[buf_i]["cnt"]=r
                    buf[buf_i]["scan_param_id"]=r_i+start
                    buf_i=buf_i+1
-                ts4_flg = 0 
-                err=err+1 
+                ts4_flg = 0
+                err=err+1
         elif r & 0xFF000000 == 0x73000000:  # timestamp
             ts4_timestamp = (ts4_timestamp & np.uint64(0x0000FFFFFFFFFFFF)) | (np.uint64(r & np.uint64(0x000000000000FFFF)) << np.uint64(48))
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"ts2_timestamp",hex(ts_timestamp)
+            #print(r_i,hex(r),"ts2_timestamp",hex(ts_timestamp))
 
             if ts4_flg == 0x0:
                 ts4_flg = 0x1
@@ -474,8 +474,8 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                    buf[buf_i]["cnt"]=r
                    buf[buf_i]["scan_param_id"]=r_i+start
                    buf_i=buf_i+1
-                ts4_flg = 0 
-                err=err+1                         
+                ts4_flg = 0
+                err=err+1
 
         ########################
         ### TLU
@@ -493,12 +493,12 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
                 if tlu_org < (np.int32(ts2_pre) & 0x7FFF0):
                     tlu_timestamp = tlu_timestamp + np.uint64(0x80000)
             #if debug & 0x4 ==0x4:
-                #print r_i,hex(r),"ts=",hex(tlu_timestamp),"tlu",tlu,hex(tlu_tmp),tlu_tmp < trig_tmp
+                #print(r_i,hex(r),"ts=",hex(tlu_timestamp),"tlu",tlu,hex(tlu_tmp),tlu_tmp < trig_tmp)
 
             if debug & 0x2 == 0x2:
                 buf[buf_i]["col"]=0xFF
                 buf[buf_i]["row"]=0xFF
-                buf[buf_i]["le"]= 0xFF 
+                buf[buf_i]["le"]= 0xFF
                 buf[buf_i]["te"]= 0xFF
                 buf[buf_i]["timestamp"]=tlu_timestamp
                 buf[buf_i]["cnt"]=tlu
@@ -513,14 +513,14 @@ def _interpret_idx(raw,buf,start,col,row,le,te,noise,timestamp,rx_flg,
             buf[buf_i]["cnt"]=r
             buf[buf_i]["scan_param_id"]=r_i+start
             buf_i=buf_i+1
-            err=err+1   
+            err=err+1
     return err,buf[:buf_i],r_i,col,row,le,te,noise,timestamp,rx_flg,\
                       ts_timestamp,ts_pre,ts_flg,ts_cnt,\
                       ts2_timestamp,ts2_pre,ts2_flg,ts2_cnt,ts2t_timestamp,ts2t_flg,ts2t_cnt,\
                       ts3_timestamp,ts3_pre,ts3_flg,ts3_cnt,\
                       ts4_timestamp,ts4_pre,ts4_flg,ts4_cnt
 
-                      
+
 @njit
 def _assign_scan_id(dat,meta):
     m_i=0
@@ -533,12 +533,12 @@ def _assign_scan_id(dat,meta):
         elif meta[m_i]["index_stop"] <= dat[d_i]["scan_param_id"]:
             m_i=m_i+1
         else: # meta[m_i]["index_start"] > data[d_i]["scan_param_id"]
-            #print "error", m_i,d_i,meta[m_i]["index_start"],dat[d_i]["scan_param_id"]
+            #print("error", m_i,d_i,meta[m_i]["index_start"],dat[d_i]["scan_param_id"])
             #break
             return 1,dat,m_i,d_i
     return 0,dat,m_i, d_i
-                      
-                      
+
+
 def interpret_idx_h5(fin,fout,debug=3, n=100000000):
     buf=np.empty(n,dtype=hit_idx_dtype)
     col=0xFF
@@ -548,12 +548,12 @@ def interpret_idx_h5(fin,fout,debug=3, n=100000000):
     noise=0
     timestamp=np.uint64(0x0)
     rx_flg=0
-    
+
     ts_timestamp=np.uint64(0x0)
     ts_pre=ts_timestamp
     ts_cnt=0x0
     ts_flg=0
-    
+
     ts2_timestamp=np.uint64(0x0)
     ts2_pre=ts2_timestamp
     ts2_cnt=0x0
@@ -561,17 +561,17 @@ def interpret_idx_h5(fin,fout,debug=3, n=100000000):
     ts2t_timestamp=np.uint64(0x0)
     ts2t_cnt=0x0
     ts2t_flg=0
-    
+
     ts3_timestamp=np.uint64(0x0)
     ts3_pre=ts3_timestamp
     ts3_cnt=0x0
     ts3_flg=0
-    
+
     ts4_timestamp=np.uint64(0x0)
     ts4_pre=ts4_timestamp
     ts4_cnt=0x0
     ts4_flg=0
-    
+
     with tables.open_file(fout, "w") as f_o:
         description=np.zeros((1,),dtype=hit_idx_dtype).dtype
         hit_table=f_o.create_table(f_o.root,name="Hits",description=description,title='hit_data')
@@ -600,8 +600,8 @@ def interpret_idx_h5(fin,fout,debug=3, n=100000000):
                 err,hit_dat,m_i,d_i = _assign_scan_id(hit_dat,meta)
                 meta=meta[m_i:]
                 if d_i!=n_hit:
-                    print "assing_scan has error data=%d, assigned=%d"%(n_hit,d_i)
-                print "%d %d %.3f%% %.3fs %dhits %derrs"%(start,r_i,100.0*(start+r_i+1)/end,time.time()-t0,len(hit_dat),err)
+                    print("assing_scan has error data=%d, assigned=%d"%(n_hit,d_i))
+                print("%d %d %.3f%% %.3fs %dhits %derrs"%(start,r_i,100.0*(start+r_i+1)/end,time.time()-t0,len(hit_dat),err))
                 hit_table.append(hit_dat)
                 hit_table.flush()
                 start=start+r_i+1
@@ -621,10 +621,10 @@ def list2cnt(dat,delete_noise=True):
     ret["row"]=uni["row"]
     ret["cnt"]=cnt
     return ret
-    
+
 def without_noise(dat):
     return dat[np.bitwise_or(dat["cnt"]==0,dat["col"]>=36)]
-    
+
 
 class InterRawIdx():
     def __init__(self,chunk=100000000,debug=0):
@@ -640,12 +640,12 @@ class InterRawIdx():
         self.noise=0
         self.timestamp=np.int64(0x0)
         self.rx_flg=0
-        
+
         self.ts_timestamp=np.uint64(0x0)
         self.ts_pre=self.ts_timestamp
         self.ts_cnt=0x0
         self.ts_flg=0
-        
+
         self.ts2_timestamp=np.uint64(0x0)
         self.ts2_pre=self.ts2_timestamp
         self.ts2_cnt=0x0
@@ -653,12 +653,12 @@ class InterRawIdx():
         self.ts2t_timestamp=np.uint64(0x0)
         self.ts2t_cnt=0x0
         self.ts2t_flg=0
-        
+
         self.ts3_timestamp=np.uint64(0x0)
         self.ts3_pre=self.ts3_timestamp
         self.ts3_cnt=0x0
         self.ts3_flg=0
-        
+
         self.ts4_timestamp=np.uint64(0x0)
         self.ts4_pre=self.ts4_timestamp
         self.ts4_cnt=0x0
@@ -690,7 +690,7 @@ class InterRawIdx():
             ret=np.append(ret,hit_dat)
             start=start+r_i+1
         return ret
-        
+
     def mk_list(self,raw,delete_noise=True):
         dat=self.run(raw)
         if delete_noise==True:
@@ -700,11 +700,11 @@ class InterRawIdx():
     def mk_img(self,raw,delete_noise=True):
         dat=self.run(raw)
         return list2img(dat,delete_noise=True)
-    
+
     def mk_cnt(self,raw,delete_noise=True):
         dat=self.run(raw)
         return list2cnt(dat,delete_noise=True)
-        
+
 def raw2list(raw,delete_noise=True):
     inter=InterRaw()
     dat=inter.run(raw)
@@ -725,8 +725,7 @@ if __name__ == "__main__":
     fin=sys.argv[1]
     fout=fin[:-8]+"_hit.h5"
     interpret_idx_h5(fin,fout,debug=3)
-    # debug 
-    # 
+    # debug
+    #
     # 0x20 correct tlu_timestamp based on timestamp2 0x00 based on timestamp
-    print fout
-               
+    print(fout)

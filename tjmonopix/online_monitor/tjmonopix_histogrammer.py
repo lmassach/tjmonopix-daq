@@ -61,9 +61,9 @@ class TJMonopixHistogrammer(Transceiver):
         datar, meta = utils.simple_dec(data)
         if 'hits' in meta:
             meta['hits'] = datar
-#            print "datar"
-#            print len(datar)
-#            print "-----"
+#            print("datar")
+#            print(len(datar))
+#            print("-----")
         return meta
 
     def interpret_data(self, data):
@@ -107,7 +107,7 @@ class TJMonopixHistogrammer(Transceiver):
         if hits.shape[0] == 0:  # Empty array
             return
         fill_occupancy_hist(self.occupancy, self.tot, hits, self.pix)
-        # print "occupancy", np.sum(self.occupancy)
+        # print("occupancy", np.sum(self.occupancy))
 
         if self.mask_noisy_pixel:  # Improve
             self.occupancy[self.occupancy > np.percentile(self.occupancy, 100 - self.config['noisy_threshold'])] = 0

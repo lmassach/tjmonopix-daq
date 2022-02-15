@@ -127,7 +127,7 @@ class Plotting(object):
         data_rdpw = data[:, 112:220].reshape(-1)
         data_fdpw = data[:, :112].reshape(-1)
 
-        print np.std(data_rdpw)
+        print(np.std(data_rdpw))
 
         hist_rdpw, edges_rdpw = np.histogram(
             data_rdpw,

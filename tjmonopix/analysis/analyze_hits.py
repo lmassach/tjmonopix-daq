@@ -29,8 +29,8 @@ class AnalyzeHits():
                             hits = hits[:len(hits) - i - 1]
                             break
                     if last["scan_param_id"] == h["scan_param_id"]:
-                        print "ERROR data chunck is too small increase n"
-                hits["toa"] = np.uint8( (hits["toa"]- ((np.int64(hits["ts_inj"]) - np.int64(hits["phase"]))>>4) ) & 0x3F ) 
+                        print("ERROR data chunck is too small increase n")
+                hits["toa"] = np.uint8( (hits["toa"]- ((np.int64(hits["ts_inj"]) - np.int64(hits["phase"]))>>4) ) & 0x3F )
                 self.analyze(hits, f.root)
                 start = start + len(hits)
         self.save()
@@ -85,7 +85,7 @@ class AnalyzeHits():
 
 
     def init_delete_noninjected(self):
-        with tb.open_file(self.fraw) as f: 
+        with tb.open_file(self.fraw) as f:
             self.res["delete_noninjected"]=f.root.scan_parameters[:][["scan_param_id","collist"]]
     def run_delete_noninjected(self, hits):
         len0=len(hits)
@@ -101,16 +101,16 @@ class AnalyzeHits():
             for ic in injected_cols:
                mask=np.bitwise_or(tmp["col"]==ic,mask)
             buf=np.append(buf,tmp[mask])
-        print "delete_noninjected from %d to %d to %d %.3f percent"%(len0,len1,len(buf),100.0*len(buf)/len0)
+        print("delete_noninjected from %d to %d to %d %.3f percent"%(len0,len1,len(buf),100.0*len(buf)/len0))
         return buf
     def init_delete_cetainvalue(self,delvalues={"inj":0.0}):
-        with tb.open_file(self.fraw) as f: 
+        with tb.open_file(self.fraw) as f:
             self.res["delete_cetainvalue"]=delvalues
     def run_delete_cetainvalue(self, hits):
         len0=len(hits)
         for k,v in self.res["delete_cetainvalue"].iteritems():
             hits=hits[hits[k]!=v]
-        print "delete_cetainvalue from %d to %d %.3f percent"%(len0,len(hits),100.0*len(hits)/len0)
+        print("delete_cetainvalue from %d to %d %.3f percent"%(len0,len(hits),100.0*len(hits)/len0))
         return hits
 
     # le counts
@@ -138,10 +138,10 @@ class AnalyzeHits():
                 description=np.zeros(0, dtype=cnt_dtype + [('cnt', "<i4")]).dtype,
                 title='le_cnt_data'
             )
-        print "AnalyzeHits: le_cnts will be analyzed"
+        print("AnalyzeHits: le_cnts will be analyzed")
 
     def run_le_cnts(self, hits, fhit_root):
-          
+
         uni, cnt = np.unique(hits[self.res["le_cnts"]], return_counts=True)
         buf = np.empty(len(uni), dtype=fhit_root.LECnts.dtype)
         for c in self.res["le_cnts"]:
@@ -248,7 +248,7 @@ class AnalyzeHits():
                        hits['col'],
                        hits['row'],
                        bins=[np.arange(0,COL_SIZE+1),np.arange(0,ROW_SIZE+1)])[0]
-                       
+
 ######### analyze delay
     def init_le_hist(self):
         with tb.open_file(self.fraw) as f:
@@ -309,7 +309,7 @@ class AnalyzeHits():
                 plt.xlabel("Injection delay [%.3fns]"%(25/16.))
                 plt.ylabel("Monopix timestamp")
                 plt.savefig("LE_inj%.4f_th%.4f.png"%(buf[0]["inj"],buf[0]["th"]),fmt="png",dpi=300)
-                print "LE_inj%.4f_th%.4f.png"%(buf[0]["inj"],buf[0]["th"])
+                print("LE_inj%.4f_th%.4f.png"%(buf[0]["inj"],buf[0]["th"]))
                 plt.clf()
 
 if "__main__"==__name__:

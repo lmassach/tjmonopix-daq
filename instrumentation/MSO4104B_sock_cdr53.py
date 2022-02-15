@@ -3,14 +3,14 @@ import numpy as np
 import socket
 import visa
 import logging
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 
 class Mso_sock():
     def __init__(self,addr='131.220.165.170'):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.connect((addr,4000))
         self.debug=0
-        
+
     def cdr53_ch2_freq_init(self):
         self.write('RECAll:SETUp FACtory')
         self.write('ACQuire:MODe SAMPLe')
@@ -56,7 +56,7 @@ class Mso_sock():
         freq = float(self.ask('MEASUrement:MEAS1:VALue?'))
         self.write("ACQuire:MODe SAMPLe")
         return freq
-    
+
     def cdr53_tap_measure_setup(self):
         self.write('RECAll:SETUp FACtory')
         self.write('ACQuire:MODe SAMPLe')
@@ -91,12 +91,12 @@ class Mso_sock():
         self.write('MATH1:TYPE DUAL')
         self.write('MATH1:DEFine "CH3-CH4"')
         self.write('MATH1:LABEL "CML"')
-        
+
         return
 
 #     def read_in_out_delay(self, tap='pre'):
 #         self.write('ACQuire:MODe SAMPLe')
-#         
+#
 #         time.sleep(1)
 #         self.write('ACQuire:MODe AVErage')
 #         self.write('ACQuire:NUMAVg 512')
@@ -122,7 +122,7 @@ class Mso_sock():
 
     def read_in_out_delay(self, tap='pre', meas_count=100):
         self.write('ACQuire:MODe SAMPLe')
-        
+
         time.sleep(1)
         self.write('ACQuire:MODe AVErage')
         self.write('ACQuire:NUMAVg 512')
@@ -147,7 +147,7 @@ class Mso_sock():
             delay.append(float(self.ask('MEASUrement:MEAS1:VALue?')))
             time.sleep(0.1)
         delay_avg = np.average(delay)
-#         print np.std(delay)
+#         print(np.std(delay))
         return delay_avg
 
     def take_screenshot(self, addr='192.168.10.2', filename=""):
@@ -171,9 +171,9 @@ class Mso_sock():
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.connect((addr,4000))
         return
-    
+
     def eye_histogram_init(self):
-        
+
         self.write('ACQuire:MODe SAMPLe')
         self.write('HORIZONTAL:SCALE 400E-12')
         time.sleep(1)
@@ -195,7 +195,7 @@ class Mso_sock():
         self.write('DISplay:PERSistence CLEAR')
         self.write('DISplay:PERSistence INFInite')
         return
-    
+
     def setup_histogram(self, ch=4, mode='h', left=55.0, top=0.0, right=55.1, bottom=100.0):
 #         default values are for vertical histogram
         self.write('HIStogram:SOUrce CH'+ str(ch))
@@ -204,9 +204,9 @@ class Mso_sock():
         else:
             self.write('HIStogram:MODe VERTical')
         self.write('HIStogram:BOXPcnt ' + str(left) + ' ,' + str(top) + ' ,' + str(right) + ' ,' + str(bottom))
-        
+
         return
-    
+
     def get_hist_all(self, data_taking_time=10):
         self.write('DISplay:PERSistence CLEAR')
         time.sleep(data_taking_time)
@@ -219,7 +219,7 @@ class Mso_sock():
         s=(e-b)/len(d)
         x=np.arange(b,e,s)
         return [hist_setting, hist_data, x, d]
-    
+
     def take_eye_histograms(self, file_path, interactive = False, data_taking_time=10):
         self.eye_histogram_init()
         self.setup_histogram(ch=4, mode='h', left=15.0, top=50.0, right=75.0, bottom=50.1)
@@ -238,19 +238,19 @@ class Mso_sock():
         logging.debug('vertical histogram settings: %s', vert_hist_setting)
         logging.debug('vertical histogram raw data: %s', vert_hist_data_raw)
         time.sleep(5)
-        
+
         plt.subplot(2, 1, 1)
         plt.plot(hor_hist_x[0:999], hor_hist_y[0:999])
         plt.xlabel('time')
         plt.ylabel('counts')
         plt.title('histogram of horizontal eye opening (two consecutive eyes)')
-        
+
         plt.subplot(2, 1, 2)
         plt.plot(vert_hist_x[0:255], vert_hist_y[0:255])
         plt.xlabel('voltage')
         plt.ylabel('counts')
         plt.title('histogram of vertical eye opening')
-        
+
         plt.tight_layout()
         fig = plt.gcf()  # using this, so after show() the same figure is still saved to file
         if interactive == True:
@@ -258,13 +258,13 @@ class Mso_sock():
         plot_filename = file_path + '_eye_histograms.png'
         fig.savefig(plot_filename)
         plt.close()
-        
+
         logging.info('made plot: %s', plot_filename)
         return
-    
+
     def write(self,cmd):
         if self.debug==1:
-            print "Mso_sock.write() %s"%cmd
+            print("Mso_sock.write() %s"%cmd)
         self.s.sendall("%s\r\n"%cmd)
     def read(self,size=1024):
         data=""
@@ -272,13 +272,13 @@ class Mso_sock():
         while i<100000000:
             ret=self.s.recv(size)
             if self.debug==2:
-                print "%d:Mso_sock.read() ret(%d)="%(i,len(ret)),repr(ret)
+                print("%d:Mso_sock.read() ret(%d)="%(i,len(ret)),repr(ret))
             data="%s%s"%(data,ret)
             if ret[-1]=="\n" or ret[-1]=="\r":
                 break
             i=i+1
         if i==100000000:
-            print  "ERR increase read loop"
+            print("ERR increase read loop")
         if len(data)<2:
             data=""
         elif data[-1]=="\n" and data[-2]=="\r":
@@ -290,7 +290,7 @@ class Mso_sock():
         return data
     def ask(self,cmd):
         if self.debug==1:
-            print "Mso_sock.ask() cmd=", cmd
+            print("Mso_sock.ask() cmd=", cmd)
         self.s.sendall("%s\r\n"%cmd)
         for i in range(5):
            time.sleep(0.1*i)
@@ -305,7 +305,7 @@ class Mso_sock():
         for i in range(1000):
             tmp=self.ask("ACQ?")
             if self.debug==1:
-                print "Mso_sock.query() acq=%s"%tmp
+                print("Mso_sock.query() acq=%s"%tmp)
             state=tmp.split(";")[1].split()[-1]
             if int(state)!=1:
                 break
@@ -337,14 +337,14 @@ class Mso_sock():
             self.write('DATA:ENC ASCII')
             self.write('DATA:START %d'%start)
             if self.debug:
-               print "init() ch=",i, "stop=",stop
+               print("init() ch=",i, "stop=",stop)
             if stop>0:
                 self.write('DATA:STOP %d'%stop)
             else:
                 #pass
                 stop=int(self.ask('HOR:RECO?'))
                 self.write('DATA:STOP %d'%stop)
-    
+
     def get_alldata(self,chs):
         dat=""
         for ch in chs:
@@ -353,7 +353,7 @@ class Mso_sock():
             dat=dat+self.ask('WAVF?')
         dat=dat+'\n'
         return dat
- 
+
     def get_hist(self,save=True):
         hist_setting=self.ask("HISTOGRAM?")
         hist_data=self.ask("HIS:DAT?")
@@ -377,13 +377,13 @@ class Mso_sock():
         with open(filename,"w") as f:
             f.write(wave)
 
-############### old functions  
+############### old functions
     def init_old(self,chs=[1,2,3,4]):
       self.param={}
 
       tmp=self.ask('WFMPRE:XINCR?').split()
       if self.debug==1:
-              print "XINCR",tmp
+              print("XINCR",tmp)
       self.param["time"]=[float(tmp[-1]),0,0]
       for i in chs:
           self.write('DATA:SOURCE CH%d'%i)
@@ -392,17 +392,17 @@ class Mso_sock():
           #time.sleep(0.1)
           tmp=self.ask('WFMPRE:YMULT?').split()
           if self.debug==1:
-              print 'YMULT',i, tmp
+              print('YMULT',i, tmp)
           ymult = float(tmp[-1])
           #time.sleep(0.1)
           tmp=self.ask('WFMPRE:YZERO?').split()
           if self.debug==1:
-              print "YZERO",i, tmp
+              print("YZERO",i, tmp)
           yzero = float(tmp[-1])
           #time.sleep(0.1)
           tmp=self.ask('WFMPRE:YOFF?').split()
           if self.debug==1:
-              print "YOFF",i, tmp
+              print("YOFF",i, tmp)
           yoff = float(tmp[-1])
           self.param["ch%d"%i]=[ymult,yzero,yoff]
     def init_old2(self,chs=[1,2,3,4],start=1,stop=-1):
@@ -410,7 +410,7 @@ class Mso_sock():
 
         tmp=self.ask('WFMPRE:XINCR?')
         if self.debug==1:
-              print "XINCR",tmp
+              print("XINCR",tmp)
         s=tmp
         self.param["time"]=[float(tmp.split()[-1]),0,0]
 
@@ -428,7 +428,7 @@ class Mso_sock():
             self.write('DATA:START %d'%start)
             self.write('DATA:STOP %d'%stop)
         return s
-        
+
     def get_data(self):
       wave=np.empty([len(self.param),self.wave_len])
       i=1
@@ -438,55 +438,55 @@ class Mso_sock():
           self.write('DATA:SOURCE %s'%k.upper())
           data = self.ask('CURVE?')
           if self.debug==1:
-              print "len(data)=",len(data),data[:10],
+              print("len(data)=",len(data),data[:10],)
           ADC_wave = np.array(data.split(","))
           if self.debug==1:
-              print "wave=",len(ADC_wave)
+              print("wave=",len(ADC_wave))
           ADC_wave = ADC_wave.astype(np.float)
           wave[i]=(ADC_wave - v[2]) * v[0]  + v[1]
           i=i+1
-      wave[0]=np.arange(0, self.param["time"][0] * (self.wave_len)+self.param["time"][0]*0.5, 
+      wave[0]=np.arange(0, self.param["time"][0] * (self.wave_len)+self.param["time"][0]*0.5,
               self.param["time"][0])[:self.wave_len-1]
       return wave
-      
+
     def get_data_slow(self, chs=[1,2,3,4]):
       for i in chs:
           self.write('DATA:SOURCE CH%d'%i)
           self.write('DATA:WIDTH 2')
           self.write('DATA:ENC ASCII')
-          
+
           tmp=self.ask('WFMPRE:YMULT?').split()
           if self.debug==1:
-              print i, tmp
+              print(i, tmp)
           ymult = float(tmp[-1])
           tmp=self.ask('WFMPRE:YZERO?').split()
           if self.debug==1:
-              print i, tmp
+              print(i, tmp)
           yzero = float(tmp[-1])
           tmp=self.ask('WFMPRE:YOFF?').split()
           if self.debug==1:
-              print i, tmp
+              print(i, tmp)
           yoff = float(tmp[-1])
           tmp=self.ask('WFMPRE:XINCR?').split()
           if i==chs[0]:
               xincr = float(tmp[-1])
           elif xincr != float(tmp[-1]):
               raise ValueError("xincr must be the same %f, %f"%(xincr,float(tmp[-1])))
-    
+
           self.write('CURVE?')
           data = self.read()
           if self.debug==1:
-              print "len(data)=",len(data),data[:10]
+              print("len(data)=",len(data),data[:10])
           ADC_wave = np.array(string.split(data,","))
           if self.debug==1:
-              print "wave=",len(ADC_wave)
+              print("wave=",len(ADC_wave))
           ADC_wave = ADC_wave.astype(np.float)
           if i==chs[0]:
               wave=np.zeros([5,len(ADC_wave)])
               wave[0,:] = np.arange(0, xincr * len(ADC_wave), xincr)
           wave[i,:] = (ADC_wave - yoff) * ymult  + yzero
       return wave
-      
+
     def save_data(self,wave,filename=""):
         if filename=="":
             filename=time.strftime("mso_%y%m%d-%H%M%S.npy")
@@ -497,15 +497,15 @@ class Mso_sock():
     def save_screen(self):
         pass
     def close(self):
-        #self.s.shutdown('SHUT_RDWR') # from manual - used for "closing connection in timely fashion" 
+        #self.s.shutdown('SHUT_RDWR') # from manual - used for "closing connection in timely fashion"
         self.s.close()
-        
+
 if __name__=="__main__":
-    print "......start......"
+    print("......start......")
     m=Mso_sock(addr="131.220.165.170")
     m.debug=1
     for i in range(2000):
         f=m.measure(chs=[1,2,4])
-        print time.time(),i,f
-    print "......done......"
-#     
+        print(time.time(),i,f)
+    print("......done......")
+#

@@ -17,7 +17,7 @@ local_configuration={"phaselist": np.arange(0,17,1),
 
 class TwScan(injection_scan.InjectionScan):
     scan_id = "tw_scan"
-    
+
     def scan(self,**kwargs):
         kwargs["pix"]=kwargs.pop("pix",local_configuration['pix'])
 
@@ -33,7 +33,7 @@ class TwScan(injection_scan.InjectionScan):
         fraw = self.output_filename +'.h5'
         fhit=fraw[:-7]+'hit.h5'
         fev=fraw[:-7]+'ev.h5'
-        
+
         ##interpret and event_build
         import monopix_daq.analysis.interpreter_idx as interpreter_idx
         interpreter_idx.interpret_idx_h5(fraw,fhit,debug=0x8+0x3)
@@ -41,7 +41,7 @@ class TwScan(injection_scan.InjectionScan):
         import monopix_daq.analysis.event_builder_inj as event_builder_inj
         event_builder_inj.build_inj_h5(fhit,fraw,fev,n=10000000)
         self.logger.info('timestamp assigned %s'%(fev))
-        
+
         ##analyze
         import monopix_daq.analysis.analyze_hits as analyze_hits
         ana=analyze_hits.AnalyzeHits(fev,fraw)
@@ -88,9 +88,9 @@ class TwScan(injection_scan.InjectionScan):
                 plotting.plot_2d_pixel_4(
                     [injected,injected,dat["MONITOR_EN"],dat["TRIM_EN"]],
                     page_title="Pixel configuration",
-                    title=["Preamp","Inj","Mon","TDAC"], 
+                    title=["Preamp","Inj","Mon","TDAC"],
                     z_min=[0,0,0,0], z_max=[1,1,1,15])
-                
+
                 ## S-curve
                 res,le,ph=get_scurve(f.root,inj_n)
                 plotting.plot_scurve(res[0:2],
@@ -118,7 +118,7 @@ class TwScan(injection_scan.InjectionScan):
                            bins=[phaselist,np.arange(le-10,le+10)],
                            z_max=["maximum","maximum","maximum","maximum"]
                            )
-                           
+
 def get_scurve(fhit_root,inj_n):
     injlist=fhit_root.LEScurveFit.attrs.injlist
     phaselist=fhit_root.LEHist.attrs.phaselist
@@ -126,7 +126,7 @@ def get_scurve(fhit_root,inj_n):
     start=0
     tmpend=min(end,start+end)
     hist=fhit_root.LEHist[:]
-    
+
     uni=np.unique(hist[['scan_param_id','col','row','th']])
     if len(uni)!=1:
         return None
@@ -136,22 +136,22 @@ def get_scurve(fhit_root,inj_n):
 
         flg=0
         le0=np.argmax(dat[a]["LE"][0,:])
-        #print le0
+        #print(le0)
         for ph_i,ph in enumerate(phaselist[1:]):
             le=np.argmax(dat[a]["LE"][ph_i+1,:])
-            #print ph_i,ph,le,dat[a]["LE"][ph_i+1,le]
+            #print(ph_i,ph,le,dat[a]["LE"][ph_i+1,le])
             if le0!=le:
                 flg=1
             if flg==1 and dat[a]["LE"][ph_i+1,le]==inj_n:
                 break
-        #print "get_scurve()============ le",le,"phase_idx",ph_i+1,"phase",ph
+        #print("get_scurve()============ le",le,"phase_idx",ph_i+1,"phase",ph)
 
         cnt_1bin=np.zeros(len(injlist))
         cnt=np.zeros(len(injlist))
         for d in dat:
             a=np.argmin(np.abs(injlist-d["inj"]))
             if np.abs(injlist-d["inj"])[a] > 1E-4:
-                print "ERROR injlist is wrong"
+                print("ERROR injlist is wrong")
             cnt_1bin[a]=d["LE"][ph_i+1,le]
             cnt[a]=np.sum(d["LE"][ph_i+1,:])
             injlist[a]=d["inj"]
@@ -165,13 +165,13 @@ def get_scurve(fhit_root,inj_n):
     hist=fhit_root.LEScurveFit[:]
     hist=hist[np.bitwise_and(hist["phase"]==ph, hist["tof"]==le)]
     if len(hist)!=1:
-        print "tw_scan.get_scurve() 1error!!"
+        print("tw_scan.get_scurve() 1error!!")
     res[0]["x"]=injlist
     res[0]["y"]=cnt_1bin
     res[0]["A"]=hist[0]["A"]
     res[0]["mu"]=hist[0]["mu"]
     res[0]["sigma"]=hist[0]["sigma"]
-    
+
     ### debug
     #dat=fhit_root.LECnts[:]
     #dat=dat[np.bitwise_and(dat["phase"]==ph, dat["tof"]==le)]
@@ -180,7 +180,7 @@ def get_scurve(fhit_root,inj_n):
     #res[2]["A"]=hist[0]["A"]
     #res[2]["mu"]=hist[0]["mu"]
     #res[2]["sigma"]=hist[0]["sigma"]
-    
+
 
     hist=fhit_root.ScurveFit[:]
     u0=np.empty(1,dtype=uni.dtype.descr+[("phase",'<i4')])
@@ -189,13 +189,13 @@ def get_scurve(fhit_root,inj_n):
         u0[0][c]=u[c]
     hist=hist[hist['phase']==ph]
     if len(hist)!=1:
-        print "tw_scan.get_scurve() 2error!!"
+        print("tw_scan.get_scurve() 2error!!")
     res[1]["x"]=injlist
     res[1]["y"]=cnt
     res[1]["A"]=hist[0]["A"]
     res[1]["mu"]=hist[0]["mu"]
     res[1]["sigma"]=hist[0]["sigma"]
-    
+
     ### debug
     #dat=fhit_root.Cnts[:]
     #dat=dat[dat["phase"]==ph]
@@ -204,30 +204,30 @@ def get_scurve(fhit_root,inj_n):
     #res[3]["A"]=hist[0]["A"]
     #res[3]["mu"]=hist[0]["mu"]
     #res[3]["sigma"]=hist[0]["sigma"]
-    
+
     return res,le,ph
 
 if __name__ == "__main__":
     from monopix_daq import monopix
     import argparse
-    
+
     parser = argparse.ArgumentParser(usage="tw_scan.py xxx_scan",
              formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--config_file", type=str, default=None)
     parser.add_argument('-t',"--th", type=float, default=None)
     parser.add_argument('-in',"--inj_n", type=float, default=100)
-    #parser.add_argument('-ib',"--inj_start", type=float, 
+    #parser.add_argument('-ib',"--inj_start", type=float,
     #     default=local_configuration["injlist"][0])
-    #parser.add_argument('-ie',"--inj_stop", type=float, 
+    #parser.add_argument('-ie',"--inj_stop", type=float,
     #     default=local_configuration["injlist"][-1])
-    #parser.add_argument('-is',"--inj_step", type=float, 
+    #parser.add_argument('-is',"--inj_step", type=float,
     #     default=local_configuration["injlist"][1]-local_configuration["injlist"][0])
     args=parser.parse_args()
     #local_configuration["injlist"]=np.arange(args.inj_start,args.inj_stop,args.inj_step)
 
     m=monopix.Monopix()
     scan = TwScan(m,online_monitor_addr="tcp://127.0.0.1:6500")
-    
+
     if args.config_file is not None:
         m.load_config(args.config_file)
     if args.th is not None:

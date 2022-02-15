@@ -73,14 +73,14 @@ if __name__ == "__main__":
 
     # Histogram ToT values for each pixel and injection step
     hist = tot_hist4d(hits, inj_steps)
-    print hist.shape
+    print(hist.shape)
 
 #     # Calculate mean Tot and std for each pixel and injection step
 #     bin_positions = np.zeros_like(hist, dtype=np.uint16)
 #     bin_positions[:, :, :, :] = np.arange(0, 64, 1)
     tot_mean = au.get_mean_from_histogram(hist, np.arange(0, 64, 1), axis=3)
     flattened = np.reshape(tot_mean, (112 * 224, 65))
-    print flattened[:, 20]
+    print(flattened[:, 20])
 
     tot_hist = np.empty([65, 64])
     sigma = np.zeros(65)
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 #     print('From all fits: m={} b={}'.format(slope[25, 45], offset[25, 45]))
 #     print(np.median(slope), np.median(offset))
 
-    print flattened.shape
+    print(flattened.shape)
 
     fig, ax = plt.subplots()
 
@@ -146,8 +146,8 @@ if __name__ == "__main__":
     ax.set_xlabel("Injected charge / DU")
     ax.set_ylabel("Mean measured charge / TOT")
 
-    print sigma
-    print np.mean(sigma[sigma != 0])
+    print(sigma)
+    print(np.mean(sigma[sigma != 0]))
 
     plt.show()
 

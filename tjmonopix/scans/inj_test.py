@@ -12,7 +12,7 @@ class InjectionTest(ScanBase):
     def analyze(self, filename=None):
         if not filename:
             filename = self.filename
-        
+
         with tb.open_file(filename, "r+") as data_file:
             raw_data = data_file.root.raw_data[:]
             hit_data = interpret_data(raw_data)
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     scan = InjectionTest(working_dir="/home/silab/tjmonopix/scans/")
     scan.start()
 
-    print scan.dut.get_power_status()
+    print(scan.dut.get_power_status())
     raw_input("Check...")
 
     scan.dut['CONF_SR']['EN_PMOS_NOSF'].setall(False)
@@ -30,8 +30,8 @@ if __name__ == "__main__":
     scan.dut['CONF_SR']['EN_COMP'].setall(False)
     scan.dut['CONF_SR']['EN_HV'].setall(False)
     scan.dut['CONF_SR']['EN_OUT'].setall(False)
-    scan.dut['CONF_SR']['nEN_OUT'].setall(True) 
-    scan.dut['CONF_SR']['EN_HITOR_OUT'].setall(True) 
+    scan.dut['CONF_SR']['nEN_OUT'].setall(True)
+    scan.dut['CONF_SR']['EN_HITOR_OUT'].setall(True)
     scan.dut['CONF_SR']['nEN_HITOR_OUT'].setall(True)
 
     scan.dut['CONF_SR']['EN_PMOS'][9] = 1
@@ -59,6 +59,6 @@ if __name__ == "__main__":
     with scan.readout():
         scan.dut["data_rx"].set_en(True)
         time.sleep(10)
-  
+
     scan.stop()
     scan.analyze()

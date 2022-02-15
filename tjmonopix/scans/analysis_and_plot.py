@@ -9,7 +9,7 @@ def AnalysisAndPlot(ScanClass,fin=None):
             self.working_dir = os.path.join(os.getcwd(),"output_data")
             flist=glob.glob(os.path.join(self.working_dir,"*_%s.h5"%self.scan_id))
             if len(flist)==0:
-                print "cannot find %s file in %s"%(self.scan_id, self.working_dir)
+                print("cannot find %s file in %s"%(self.scan_id, self.working_dir))
                 return None
             latest= max(flist, key=os.path.getctime)
             self.output_filename = latest[:-3]
@@ -18,7 +18,7 @@ def AnalysisAndPlot(ScanClass,fin=None):
             self.working_dir = os.path.dirname(os.path.realpath(fin))
             self.run_name = os.path.basename(os.path.realpath(fin))
             self.output_filename = os.path.join(self.working_dir, self.run_name)
-            
+
         ### set logger
         self.logger = logging.getLogger()
         flg=0
@@ -31,7 +31,7 @@ def AnalysisAndPlot(ScanClass,fin=None):
             fh.setLevel(logging.WARNING)
             self.logger.addHandler(fh)
         self.logger.info("filename:%s"%self.output_filename)
-        
+
     newclass = type("AnalysisAndPlot", (ScanClass,),{"__init__": __init__})
     inst=newclass(fin)
     #if inst is not None:
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     import importlib
     import inspect
     import argparse
-    
+
     parser = argparse.ArgumentParser(usage="analysis_and_plot.py xxx_scan",
              formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("scan_module_name", metavar="scan_module_name", type=str)
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     args=parser.parse_args()
 
     x=importlib.import_module('tjmonopix.scans.%s'%args.scan_module_name)
-    #print './scans/%s.py'%args.scan_module_name
+    #print('./scans/%s.py'%args.scan_module_name)
     #x=imp.load_source('monopix_daq.scans.%s'%args.scan_module_name,'./scans/%s.py'%args.scan_module_name)
     for name, ScanClass in inspect.getmembers(x):
         if inspect.isclass(ScanClass):
@@ -63,4 +63,3 @@ if __name__ == "__main__":
         a.analyze()
     if not args.analysis_only:
         a.plot()
-

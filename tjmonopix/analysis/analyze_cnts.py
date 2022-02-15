@@ -23,7 +23,7 @@ class AnalyzeCnts():
                 elif f.root.kwargs[i]=="phaselist":
                     self.phaselist=np.sort(np.unique(yaml.safe_load(f.root.kwargs[i+1])))
             self.inj_n=yaml.safe_load(f.root.meta_data.attrs.status)["inj"]["REPEAT"]
- 
+
     def run(self,n=10000000):
         with tb.open_file(self.fdat,"a") as f:
             end=len(f.root.Cnts)
@@ -40,11 +40,11 @@ class AnalyzeCnts():
                             hits=hits[:len(hits)-i-1]
                             break
                     if last["scan_param_id"]==h["scan_param_id"]:
-                        print "ERROR data chunck is too small increase n"
+                        print("ERROR data chunck is too small increase n")
                 self.analyze(hits,f.root)
                 start=start+len(hits)
         self.save()
-        
+
     def analyze(self, dat, fdat_root):
         if "scurve_fit" in self.res.keys():
             self.run_scurve_fit(dat,fdat_root)
@@ -52,7 +52,7 @@ class AnalyzeCnts():
             self.run_scurve_fit(dat,fdat_root)
         if "scurve" in self.res.keys():
             self.run_scurve(dat,fdat_root)
-            
+
     def save(self):
         if "scurve_fit" in self.res.keys():
             self.save_scurve_fit()
@@ -73,12 +73,12 @@ class AnalyzeCnts():
                         dat_dtype.pop(i)
                         break
             if len(self.injlist)<2:
-                 print "too short injlist",self.injlist
+                 print("too short injlist",self.injlist)
                  return
             s=self.injlist[1]-self.injlist[0]
             xbins=np.arange(np.min(self.injlist)-0.5*s,np.max(self.injlist)+0.5*s,s)
             ybins=np.arange(0.5,self.inj_n+9.5,1.0)
-            
+
             self.res["scurve"]=list(np.empty(0,dtype=dat_dtype).dtype.names)
             dat_dtype=dat_dtype+[("scurve","<i4",(len(xbins)-1,len(ybins)-1))]
             buf=np.zeros(1,dtype=dat_dtype)
@@ -99,13 +99,13 @@ class AnalyzeCnts():
         buf=np.zeros(len(uni),dtype=fdat_root.Scurve.dtype)
         for u_i,u in enumerate(uni):
             tmp=dat[dat[self.res["scurve"]]==u]
-            
+
             buf[u_i]["scurve"]=np.histogram2d(tmp["inj"],tmp["cnt"],bins=[xbins,ybins])[0]
             for c in self.res["scurve"]:
                 buf[u_i][c]=u[c]
         fdat_root.Scurve.append(buf)
         fdat_root.Scurve.flush()
-            
+
     def save_scurve(self):
         self.res["scurve"]=False
 
@@ -121,7 +121,7 @@ class AnalyzeCnts():
                     if dat_type[i][0]==c:
                         dat_type.pop(i)
                         break
-           
+
            p_names=[]
            for d in dat_type:
               p_names.append(d[0])
@@ -156,7 +156,7 @@ class AnalyzeCnts():
                     if dat_type[i][0]==c:
                         break
                 dat_type.pop(i)
-           
+
            p_names=[]
            for d in dat_type:
               p_names.append(d[0])
@@ -236,10 +236,9 @@ class AnalyzeCnts():
             buf[u_i]["mu_err"]=fit[4]
             buf[u_i]["sigma"]=fit[2]
             buf[u_i]["sigma_err"]=fit[5]
-        #print buf["col"]
+        #print(buf["col"])
         fdat_root.ScurveFit.append(buf)
         fdat_root.ScurveFit.flush()
 
     def save_scurve_fit(self):
         self.res["scurve_fit"]=False
-        

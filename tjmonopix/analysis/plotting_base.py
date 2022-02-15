@@ -33,13 +33,13 @@ class PlottingBase(object):
     def __init__(self, fout, save_png=False ,save_single_pdf=False):
         self.logger = logging.getLogger()
         #self.logger.setLevel(loglevel)
-        
+
         self.plot_cnt = 0
         self.save_png = save_png
         self.save_single_pdf = save_single_pdf
         self.filename = fout
         self.out_file = PdfPages(self.filename)
-        
+
     def _save_plots(self, fig, suffix=None, tight=True):
         increase_count = False
         bbox_inches = 'tight' if tight else ''
@@ -108,21 +108,21 @@ class PlottingBase(object):
         tab.scale(1,0.5)
         self.out_file.savefig(fig)
         #self._save_plots(fig, suffix=None, tight=True)
-        
+
         fig = Figure()
         FigureCanvas(fig)
         ax = fig.add_subplot(111)
         ax.set_adjustable('box')
 
     def plot_2d_pixel_4(self, dat, page_title="Pixel configurations",
-                        title=["Preamp","Inj","Mon","TDAC"], 
+                        title=["Preamp","Inj","Mon","TDAC"],
                         x_axis_title="Column", y_axis_title="Row", z_axis_title="",
                         z_min=[0,0,0,0], z_max=[1,1,1,15]):
         fig = Figure()
         FigureCanvas(fig)
         for i in range(4):
             ax = fig.add_subplot(221+i)
-            
+
             cmap = cm.get_cmap('plasma')
             cmap.set_bad('w')
             cmap.set_over('r')  # Make noisy pixels red
@@ -149,7 +149,7 @@ class PlottingBase(object):
         if page_title is not None and len(page_title)>0:
             fig.suptitle(page_title, fontsize=12,color=OVERTEXT_COLOR, y=1.05)
         self._save_plots(fig)
-        
+
     def plot_1d_pixel_hists(self,hist2d_array, mask=None, bins=30,
                            top_axis_factor=None,
                            top_axis_title="Threshold [e]",
@@ -172,12 +172,12 @@ class PlottingBase(object):
             hist2d=hist2d[mask==1]
             hist=ax.hist(hist2d.reshape([-1]),
             bins=bins, histtype="step")
-            
+
         ax.set_xbound(hist[1][0],hist[1][-1])
 
         ax.set_xlabel(x_axis_title)
         ax.set_ylabel(y_axis_title)
-        
+
         if top_axis_factor is None:
             ax.set_title(title,color=TITLE_COLOR)
         else:
@@ -191,10 +191,10 @@ class PlottingBase(object):
         if page_title is not None and len(page_title)>0:
             self._add_title(page_title,fig)
         self._save_plots(fig)
-        
+
     def plot_2d_pixel_hist(self, hist2d, page_title=None,
                            title="Hit Occupancy",
-                           z_axis_title=None, 
+                           z_axis_title=None,
                            z_min=0, z_max=None):
         if z_max == 'median':
             z_max = 2 * np.ma.median(hist2d)
@@ -211,7 +211,7 @@ class PlottingBase(object):
             z_min = np.ma.min(hist2d)
         if z_min == z_max or hist2d.all() is np.ma.masked:
             z_min = 0
-            
+
         x_axis_title="Column"
         y_axis_title="Row"
 
@@ -227,7 +227,7 @@ class PlottingBase(object):
         cmap.set_under('w')
         #norm = colors.BoundaryNorm(bounds, cmap.N)
 
-        im = ax.imshow(np.transpose(hist2d), interpolation='none', aspect='auto', 
+        im = ax.imshow(np.transpose(hist2d), interpolation='none', aspect='auto',
                        vmax=z_max+1,vmin=z_min,
                        cmap=cmap, # norm=norm,
                        origin='lower')  # TODO: use pcolor or pcolormesh
@@ -245,12 +245,12 @@ class PlottingBase(object):
         if page_title is not None and len(page_title)>0:
             self._add_title(page_title,fig)
         self._save_plots(fig)
-        
+
     def plot_2d_hist(self, hist2d, bins=None,
                      page_title=None,
                      title="Hit Occupancy",
                      x_axis_title="Test pulse injection [V]",
-                     y_axis_title="Counts", 
+                     y_axis_title="Counts",
                      z_axis_title=None, z_min=1, z_max=None, z_scale="lin"):
         if z_max == 'median':
             z_max = 2 * np.ma.median(hist2d)
@@ -275,10 +275,10 @@ class PlottingBase(object):
 
         bounds = np.linspace(start=z_min, stop=z_max + 1, num=255, endpoint=True)
         cmap = cm.get_cmap('viridis')
-        
+
         cmap.set_over('r')
         cmap.set_under('w')
-        
+
         if z_scale=="log":
             norm = colors.LogNorm()
             cmap.set_bad('w')
@@ -286,7 +286,7 @@ class PlottingBase(object):
             norm = None
             cmap.set_bad('k')
 
-        im = ax.imshow(np.transpose(hist2d), interpolation='none', aspect='auto', 
+        im = ax.imshow(np.transpose(hist2d), interpolation='none', aspect='auto',
                        vmax=z_max+1,vmin=z_min,
                        cmap=cmap,norm=norm,
                        extent=[bins[0][0],bins[0][-1],bins[1][0],bins[1][-1]],
@@ -304,10 +304,10 @@ class PlottingBase(object):
         if page_title is not None and len(page_title)>0:
             self._add_title(page_title,fig)
         self._save_plots(fig)
-        
+
     def plot_2d_hist_4(self, dat, page_title="Pixel configurations",
                         bins=None,
-                        title=["Preamp","Inj","Mon","TDAC"], 
+                        title=["Preamp","Inj","Mon","TDAC"],
                         x_axis_title="Column",
                         y_axis_title="Row",
                         z_axis_title="",
@@ -318,7 +318,7 @@ class PlottingBase(object):
             ax = fig.add_subplot(221+i)
             if z_max[i]=='maximum':
                 z_max[i]=np.max(dat[i])
-            
+
             cmap = cm.get_cmap('viridis')
             cmap.set_bad('w')
             cmap.set_over('r')  # Make noisy pixels red
@@ -338,7 +338,7 @@ class PlottingBase(object):
         if page_title is not None and len(page_title)>0:
             fig.suptitle(page_title, fontsize=12,color=OVERTEXT_COLOR, y=1.05)
         self._save_plots(fig)
-        
+
     def plot_scurve(self,dat,
                    top_axis_factor=None,
                    top_axis_title="Threshold [e]",
@@ -356,7 +356,7 @@ class PlottingBase(object):
         FigureCanvas(fig)
         ax = fig.add_subplot(111)
         ax.set_adjustable('box')
-        print len(dat)
+        print(len(dat))
         for i, d in enumerate(dat):
             color = next(ax._get_lines.prop_cycler)['color']
             ax.plot(d["x"], d["y"],linestyle="", marker="o",color=color,label=dat_title[i])
@@ -372,10 +372,10 @@ class PlottingBase(object):
             y_max=np.max(d["y"])
         ax.set_xbound(x_min,x_max)
         ax.set_ybound(y_min,y_max)
-        
+
         ax.set_xlabel(x_axis_title)
         ax.set_ylabel(y_axis_title)
-        
+
         if top_axis_factor is None:
             ax.set_title(title,color=TITLE_COLOR)
         else:

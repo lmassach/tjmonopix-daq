@@ -74,18 +74,18 @@ class SourceScan(ScanBase):
         if with_mon:
             self.meta_data_table.attrs.timestamp_status = yaml.dump(
                 self.dut["timestamp_mon"].get_configuration())
-                
+
     @classmethod
     def analyze(self, data_file=None, event_build="none", clusterize=False):
         if data_file[-3:] ==".h5":
             fraw=data_file
         else:
             fraw = data_file + '.h5'
-        print fraw
+        print(fraw)
         analyzed_data_file=fraw[:-7]+"hit.h5"
         import tjmonopix.analysis.interpreter_old as interpreter
         interpreter.interpret_h5(fraw,analyzed_data_file)
-        
+
         if event_build=="token":
             fhit=analyzed_data_file
             analyzed_data_file=fraw[:-7]+"ev.h5"
@@ -96,7 +96,7 @@ class SourceScan(ScanBase):
             analyzed_data_file=fraw[:-7]+"ev.h5"
             import tjmonopix.analysis.event_builder_tlu as event_builder
             event_builder.build_h5(fraw,fhit,analyzed_data_file)
-        
+
         if clusterize and (event_build=="token" or event_build=="tlu"):
            fev=analyzed_data_file
            analyzed_data_file=fraw[:-7]+"cl.h5"

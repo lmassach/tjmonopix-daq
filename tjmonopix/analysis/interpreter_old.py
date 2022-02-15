@@ -42,7 +42,7 @@ def _interpret(raw, buf, col, row, le, te, noise, timestamp, rx_flg, ts_timestam
             noise = (r & 0x8000000) >> 27
 
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),rx_flg,"ts=",hex(timestamp),col,row,noise
+            #print(r_i,hex(r),rx_flg,"ts=",hex(timestamp),col,row,noise)
 
             if rx_flg == 0x0:
                 rx_flg = 0x1
@@ -53,7 +53,7 @@ def _interpret(raw, buf, col, row, le, te, noise, timestamp, rx_flg, ts_timestam
             timestamp = (timestamp & MASK1_UPPER) | (
                 np.uint64(r)<<np.uint64(4) & MASK1_LOWER)
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),rx_flg,"ts=",hex(timestamp),le,te
+            #print(r_i,hex(r),rx_flg,"ts=",hex(timestamp),le,te)
             # pass
             if rx_flg == 0x1:
                 rx_flg = 0x2
@@ -64,7 +64,7 @@ def _interpret(raw, buf, col, row, le, te, noise, timestamp, rx_flg, ts_timestam
             timestamp = (timestamp & MASK1_LOWER) | (
                 (np.uint64(r) << np.uint64(32)) & MASK1_UPPER)
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),rx_flg,"ts=",hex(timestamp)
+            #print(r_i,hex(r),rx_flg,"ts=",hex(timestamp))
 
             if rx_flg == 0x2:
                 buf[buf_i]["row"] = row
@@ -88,7 +88,7 @@ def _interpret(raw, buf, col, row, le, te, noise, timestamp, rx_flg, ts_timestam
                 (np.uint64( r & TS_MASK_DAT)<< np.uint64(4))
             ts_cnt = ts_cnt+1
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt
+            #print(r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt)
 
             if ts_flg == 2:
                 ts_flg = 0
@@ -115,7 +115,7 @@ def _interpret(raw, buf, col, row, le, te, noise, timestamp, rx_flg, ts_timestam
             ts_timestamp = (ts_timestamp & TS_MASK2) | \
                 (np.uint64(r & TS_MASK_DAT) << np.uint64(28))
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp2",hex(ts_timestamp),
+            #print(r_i,hex(r),"timestamp2",hex(ts_timestamp),)
             if ts_flg == 0x1:
                 ts_flg = 0x2
             else:
@@ -133,7 +133,7 @@ def _interpret(raw, buf, col, row, le, te, noise, timestamp, rx_flg, ts_timestam
             ts_timestamp = (ts_timestamp & TS_MASK3) | \
                 (np.uint64(r & TS_MASK_DAT) << np.uint64(52))
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp3",hex(ts_timestamp),
+            #print(r_i,hex(r),"timestamp3",hex(ts_timestamp),)
             if ts_flg == 0x0:
                 ts_flg = 0x1
             else:
@@ -156,7 +156,7 @@ def _interpret(raw, buf, col, row, le, te, noise, timestamp, rx_flg, ts_timestam
                 np.uint64( r & TS_MASK_DAT )
             ts2_cnt = ts2_cnt+1
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt
+            #print(r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt)
             if ts2_flg == 2:
                 ts2_flg = 0
                 if debug & 0x1 == 0x1:
@@ -181,7 +181,7 @@ def _interpret(raw, buf, col, row, le, te, noise, timestamp, rx_flg, ts_timestam
             ts2_timestamp = (ts2_timestamp & np.uint64(0xFFFF000000FFFFFF)) | \
                 (np.uint64(r & TS_MASK_DAT) << np.uint64(24))
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp1",hex(ts_timestamp)
+            #print(r_i,hex(r),"timestamp1",hex(ts_timestamp))
 
             if ts2_flg == 0x1:
                 ts2_flg = 0x2
@@ -200,7 +200,7 @@ def _interpret(raw, buf, col, row, le, te, noise, timestamp, rx_flg, ts_timestam
                 (np.uint64(r & TS_DIV_MASK_DAT) << np.uint64(48))
             ts2_tot = (np.uint64(r & TS_MASK_TOT) >> np.uint64(8))
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"ts2_timestamp",hex(ts_timestamp)
+            #print(r_i,hex(r),"ts2_timestamp",hex(ts_timestamp))
 
             if ts2_flg == 0x0:
                 ts2_flg = 0x1
@@ -224,7 +224,7 @@ def _interpret(raw, buf, col, row, le, te, noise, timestamp, rx_flg, ts_timestam
                 np.uint64( r & TS_MASK_DAT)
             ts3_cnt = ts3_cnt+1
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt
+            #print(r_i,hex(r),"timestamp1",hex(ts_timestamp),ts_cnt)
 
             if ts3_flg == 2:
                 ts3_flg = 0
@@ -250,7 +250,7 @@ def _interpret(raw, buf, col, row, le, te, noise, timestamp, rx_flg, ts_timestam
             ts3_timestamp = (ts3_timestamp & np.uint64(0xFFFF000000FFFFFF)) | \
                 (np.uint64(r & TS_MASK_DAT) << np.uint64(24))
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"timestamp1",hex(ts_timestamp)
+            #print(r_i,hex(r),"timestamp1",hex(ts_timestamp))
             if ts3_flg == 0x1:
                 ts3_flg = 0x2
             else:
@@ -267,7 +267,7 @@ def _interpret(raw, buf, col, row, le, te, noise, timestamp, rx_flg, ts_timestam
             ts3_timestamp = (ts3_timestamp & np.uint64(0x0000FFFFFFFFFFFF)) + \
                 (np.uint64(r & TS_MASK_DAT) << np.uint64(48))
             # if debug & 0x4 ==0x4:
-            #print r_i,hex(r),"ts2_timestamp",hex(ts_timestamp)
+            #print(r_i,hex(r),"ts2_timestamp",hex(ts_timestamp))
 
             if ts3_flg == 0x0:
                 ts3_flg = 0x1
@@ -342,32 +342,32 @@ def interpret_h5(fin, fout, data_format=0x3, n=100000000):
                     ts_timestamp, ts_pre, ts_flg, ts_cnt, ts2_timestamp, ts2_tot, ts2_flg, ts2_cnt, ts3_timestamp, ts3_flg, ts3_cnt, data_format)
                 hit_total = hit_total+len(hit_dat)
                 if err == 0:
-                    print "%d %d %.3f%% %.3fs %dhits" % (
+                    print("%d %d %.3f%% %.3fs %dhits" % ()
                         start, r_i, 100.0*(start+r_i+1)/end, time.time()-t0, hit_total)
                 elif err == 1 or err == 2 or err == 3:
-                    print "tjmonopix data broken", err, start, r_i, hex(
+                    print("tjmonopix data broken", err, start, r_i, hex()
                         raw[r_i]), "flg=", rx_flg
                     if data_format & 0x8 == 0x8:
                         for i in range(max(0, r_i-100), min(r_i+100, tmpend-start-6), 6):
-                            print hex(
+                            print(hex()
                                 raw[start+i]), hex(raw[start+i+1]), hex(raw[start+i+2]),
-                            print hex(
+                            print(hex()
                                 raw[start+i+3]), hex(raw[start+i+4]), hex(raw[start+i+5])
                     rx_flg = 0
                     timestamp = np.uint64(0x0)
                 elif err == 4 or err == 5 or err == 6:
-                    print "timestamp data broken", err, start, r_i, hex(
+                    print("timestamp data broken", err, start, r_i, hex()
                         raw[r_i]), "flg=", ts_flg, ts_timestamp
                     ts_flg = 0
                     ts_timestamp = np.uint64(0x0)
                     ts_pre = ts_timestamp
                 elif err == 7:
-                    print "trash data", err, start, r_i, hex(raw[r_i])
+                    print("trash data", err, start, r_i, hex(raw[r_i]))
                 elif err == 8 or err == 9 or err == 10:
-                    print "ts2_timestamp data broken", err, start, r_i, hex(
+                    print("ts2_timestamp data broken", err, start, r_i, hex()
                         raw[r_i]), "flg=", ts2_flg, ts2_timestamp
                     ts2_flg=0
-                    
+
                 hit_table.append(hit_dat)
                 hit_table.flush()
                 start = start+r_i+1
@@ -387,7 +387,7 @@ def list2cnt(dat, delete_noise=True):
     uni, cnt = np.unique(dat[["col", "row"]], return_counts=True)
     ret = np.empty(len(uni), dtype=[
                    ("col", "<u1"), ("row", "<u2"), ("cnt", "<i8")])
-    print ret.dtype.names
+    print(ret.dtype.names)
     ret["col"] = uni["col"]
     ret["row"] = uni["row"]
     ret["cnt"] = cnt
@@ -446,7 +446,7 @@ class InterRaw():
                 self.ts3_timestamp, self.ts3_flg, self.ts3_cnt,
                 data_format)
             if err != 0:
-                print "error",start,r_i, err,hex(raw[start+r_i])
+                print("error",start,r_i, err,hex(raw[start+r_i]))
             ret = np.append(ret, hit_dat)
             start = start+r_i+1
         return ret
@@ -491,8 +491,8 @@ if __name__ == "__main__":
     #fout = fin[:-3]+"_hit.h5"
     interpret_h5(fin, fout, data_format=3)
     # debug
-    # 0x01 include TLU data 
+    # 0x01 include TLU data
     # 0x02 includ timestamp data
     # 0x04 enable debug print
     # 0x20 correct tlu_timestamp based on timestamp2 0x00 based on timestamp
-    print fout
+    print(fout)

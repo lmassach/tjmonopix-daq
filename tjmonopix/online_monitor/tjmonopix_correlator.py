@@ -9,8 +9,8 @@ from numba import njit
 from tjmonopix.analysis.event_builder_mon import BuildEvents
 
 
-#fe_dtype=[('event_number', '<i8'), ('trigger_number', '<u4'), ('relative_BCID', 'u1'), ('LVL1ID', '<u2'), ('column', 'u1'), 
-#('row', '<u2'), ('tot', 'u1'), ('BCID', '<u2'), ('TDC', '<u2'), ('TDC_time_stamp', 'u1'), ('trigger_status', 'u1'), 
+#fe_dtype=[('event_number', '<i8'), ('trigger_number', '<u4'), ('relative_BCID', 'u1'), ('LVL1ID', '<u2'), ('column', 'u1'),
+#('row', '<u2'), ('tot', 'u1'), ('BCID', '<u2'), ('TDC', '<u2'), ('TDC_time_stamp', 'u1'), ('trigger_status', 'u1'),
 #('service_record', '<u4'), ('event_status', '<u2')]
 
 def get_noisy_mask(cols_corr, rows_corr, percentage):
@@ -20,13 +20,13 @@ def get_noisy_mask(cols_corr, rows_corr, percentage):
 
 #@njit
 def _correlate(fe, mono, corr_col, corr_row, tr=True):
-    
+
     fe_idx=0
     mono_idx=0
-    
+
     while len(fe)> fe_idx and len(mono)>mono_idx:
        if (fe[fe_idx]["trigger_number"] & 0x7FFF)==mono[mono_idx]["trigger_number"]:
-            #print "trigger number",(fe[fe_idx]["trigger_number"] & 0x7FFF)
+            #print("trigger number",(fe[fe_idx]["trigger_number"] & 0x7FFF))
             trigger_number=mono[mono_idx]["trigger_number"]
             fe_i=fe_idx+1
             flg=0
@@ -40,7 +40,7 @@ def _correlate(fe, mono, corr_col, corr_row, tr=True):
             mono_i=mono_idx+1
             flg=0
             while len(mono) > mono_i:
-                 if trigger_number!= mono[mono_i]["trigger_number"]: 
+                 if trigger_number!= mono[mono_i]["trigger_number"]:
                      flg=1
                      break
                  mono_i=mono_i+1
@@ -55,14 +55,14 @@ def _correlate(fe, mono, corr_col, corr_row, tr=True):
                        corr_col[fe[fe_ii]["column"],mono[mono_ii]["column"]]== corr_col[fe[fe_ii]["column"],mono[mono_ii]["column"]] + 1
                        corr_row[fe[fe_ii]["row"],mono[mono_ii]["row"]]== corr_row[fe[fe_ii]["row"],mono[mono_ii]["row"]] + 1
                 mono_idx=mono_i
-                fe_idx=fe_i 
+                fe_idx=fe_i
        elif ((fe[fe_idx]["trigger_number"] & 0x7FFF)- mono[mono_idx]["trigger_number"]) & 0x4000 == 0:
-           print (fe[fe_idx]["trigger_number"] & 0x7FFF),mono[mono_idx]["trigger_number"], ((fe[fe_idx]["trigger_number"] & 0x7FFF)- mono[mono_idx]["trigger_number"]) & 0x4000 
+           print (fe[fe_idx]["trigger_number"] & 0x7FFF),mono[mono_idx]["trigger_number"], ((fe[fe_idx]["trigger_number"] & 0x7FFF)- mono[mono_idx]["trigger_number"]) & 0x4000
            mono_idx = mono_idx+1
        else:
            fe_idx= fe_idx+1
-            
-    return 0, corr_col, corr_row,fe_idx, mono_idx                    
+
+    return 0, corr_col, corr_row,fe_idx, mono_idx
 
 class HitCorrelator(Transceiver):
 
@@ -102,7 +102,7 @@ class HitCorrelator(Transceiver):
         else:
             self.corr_col = np.zeros([self.config['max_n_columns_monopix'],self.config['max_n_columns_fei4']])
             self.corr_row = np.zeros([self.config['max_n_rows_monopix'],self.config['max_n_rows_fei4']])
-        
+
         self.mono_builder=BuildEvents(upper=0x80,lower=-0x100,WAIT_CYCLES=20,data_format=0x0)
 
     def deserialze_data(self, data):  # According to pyBAR data serialization
@@ -115,7 +115,7 @@ class HitCorrelator(Transceiver):
         #if 'meta_data' in data[0][1]:
         #    meta_data = data[0][1]['meta_data']
         #    now = float(meta_data['timestamp_stop'])
-        # 
+        #
         #    if now != self.updateTime:
         #        recent_fps = 1.0 / (now - self.updateTime)  # FIXME: shows recorded data rate not current rate
         #        self.updateTime = now
@@ -132,7 +132,7 @@ class HitCorrelator(Transceiver):
                 continue
 
             if 'te' in d[1]['hits'].dtype.names:  # MONOPIX data has keyword 'te'
-                print len(d[1]['hits'])
+                print(len(d[1]['hits']))
                 if self.mono_buf is None:
                     self.mono_buf=self.mono_builder.run(d[1]['hits'])
                 else:
@@ -141,28 +141,28 @@ class HitCorrelator(Transceiver):
                 if self.fe_buf==None:
                      self.fe_buf=d[1]['hits']
                 else:
-                     print d[1]['hits'][0]["trigger_number"] & 0x7FFF
+                     print(d[1]['hits'][0]["trigger_number"] & 0x7FFF)
                      self.fe_buf = np.append(self.fe_buf, d[1]['hits'])
-        #print "============== buf size",self.fe_buf, self.mono_buf
+        #print("============== buf size",self.fe_buf, self.mono_buf)
         if (self.fe_buf is None) or (self.mono_buf is None):
             return
-        print "============== buf size",len(self.fe_buf),len(self.mono_buf)
+        print("============== buf size",len(self.fe_buf),len(self.mono_buf))
         if len(self.fe_buf) == 0 or len(self.mono_buf) == 0:
             return
-#        print "============== buf size",len(self.fe_buf),len(self.mono_buf),
-#        print self.monopix_buffer[0],self.monopix_buffer[-1], 
-#        print len(self.fe_buffer), len(self.monopix_buffer)
-        
+#        print("============== buf size",len(self.fe_buf),len(self.mono_buf),)
+#        print(self.monopix_buffer[0],self.monopix_buffer[-1], )
+#        print(len(self.fe_buffer), len(self.monopix_buffer))
+
         # make correlation
         err,self.corr_col, self.corr_row, fe_idx, mono_idx = _correlate(self.fe_buf,self.mono_buf,self.corr_col, self.corr_row)
-        
+
         self.fe_buf = self.fe_buf[fe_idx:]
         self.mono_buf = self.mono_buf[mono_idx:]
 
         if self.remove_background:
             self.corr_col[self.mask_col]=0
             self.corr_row[self.mask_col]=0
-        
+
         return [{'column': self.corr_col, 'row': self.corr_row}]
 
 
@@ -182,8 +182,8 @@ class HitCorrelator(Transceiver):
             self.mask_row = np.zeros_like(self.mask_row)
             self.mono_builder.reset()
             gc.collect()  # garbage collector is called to free unused memory
-        
-        print "!!!!!!!!!!!!!!!!!",command
+
+        print("!!!!!!!!!!!!!!!!!",command)
         # commands
         if command[0] == 'RESET':
             reset()
@@ -195,8 +195,8 @@ class HitCorrelator(Transceiver):
         # First choose two telescope planes and then press start button to correlate
         elif 'START' in command[0]:
             self.start_signal = int(command[0].split()[1])
-            print '\n'
-            print '#######################', ' START ', '#######################\n'
+            print('\n')
+            print('#######################', ' START ', '#######################\n')
 
         # Received signal is 'ACTIVETAB tab' where tab is the name (str) of the selected tab in online monitor
         elif 'ACTIVETAB' in command[0]:
@@ -204,11 +204,11 @@ class HitCorrelator(Transceiver):
 
         elif 'STOP' in command[0]:  # received whenever 'Stop'-button is pressed; set start signal to 1
             self.start_signal = int(command[0].split()[1]) + 1
-            print '\n'
-            print '#######################', ' STOP ', '#######################\n'
-#           print "AVERAGE CPU ==", self.avg_cpu / self.n
-#           print "AVERAGE PROCESS CPU ==", self.prs_avg_cpu / self.n
-#           print "AVERAGE RAM ==", self.avg_ram / self.n
+            print('\n')
+            print('#######################', ' STOP ', '#######################\n')
+#           print("AVERAGE CPU ==", self.avg_cpu / self.n)
+#           print("AVERAGE PROCESS CPU ==", self.prs_avg_cpu / self.n)
+#           print("AVERAGE RAM ==", self.avg_ram / self.n)
             reset()
 
         elif 'BACKGROUND' in command[0]:

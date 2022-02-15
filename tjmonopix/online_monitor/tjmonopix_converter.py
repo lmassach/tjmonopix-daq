@@ -42,7 +42,7 @@ class TJMonopixConverter(Transceiver):
         hits["tot"] = get_tot(data[0][1][selection])
         self.n_hits = hits.shape[0]
 
-#         print hits
+#         print(hits)
 
         interpreted_data = {
             'hits': hits

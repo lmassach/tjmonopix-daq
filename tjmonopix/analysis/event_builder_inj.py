@@ -135,7 +135,7 @@ def build_inj_h5(fhit, fraw, fout, n=500000, debug=0x2):
             while start < end:  # # this does not work, need to read with one chunck
                 tmpend = min(end, start + n)
                 dat = f.root.Hits[start:tmpend]
-                print "data (inj_n %d,inj_loop %d): INJ=%d MONO=%d MON=%d" % (
+                print("data (inj_n %d,inj_loop %d): INJ=%d MONO=%d MON=%d" % ()
                     inj_n, len(injlist),
                     len(np.where(dat["col"] == TS_INJ)[0]),
                     len(np.where(dat["col"] < COL_SIZE)[0]),
@@ -152,7 +152,7 @@ def build_inj_h5(fhit, fraw, fout, n=500000, debug=0x2):
                     sid, pre_inj, inj_id, inj_cnt)
                 hit_table.append(hit_dat)
                 hit_table.flush()
-                print "%d %d %.3f%% %.3fs %dhits %derrs" % (start, d_i, 100.0 * (start + d_i) / end, time.time() - t0, len(hit_dat), err)
+                print("%d %d %.3f%% %.3fs %dhits %derrs" % (start, d_i, 100.0 * (start + d_i) / end, time.time() - t0, len(hit_dat), err))
                 start = start + d_i
     return
 
@@ -163,5 +163,4 @@ if __name__ == "__main__":
     fhit = fraw[:-7] + "hit.h5"
     fout = fraw[:-7] + "ts.h5"
     assign_ts(fhit, fraw, fts, n=10000000)
-    print fout
-
+    print(fout)

@@ -151,7 +151,7 @@ class NoiseOccupancyScan(ScanBase):
 
         time.sleep(0.1)
 
-        print self.dut.get_power_status()
+        print(self.dut.get_power_status())
         raw_input()
 
         cnt = 0

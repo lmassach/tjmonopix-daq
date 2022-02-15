@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 import tjmonopix.analysis.utils as utils
 #import tjmonopix.analysis.analysis_utils as utils
-COL_SIZE = 112 
+COL_SIZE = 112
 ROW_SIZE = 224
 
 
@@ -28,7 +28,7 @@ class AnalyzeLECnts():
     def run(self,n=10000000):
         with tb.open_file(self.fdat,"a") as f:
             end=len(f.root.LECnts)
-            print "AnalyzeLECnts: n of LECounts",end
+            print("AnalyzeLECnts: n of LECounts",end)
             start=0
             t0=time.time()
             hit_total=0
@@ -42,20 +42,20 @@ class AnalyzeLECnts():
                             hits=hits[:len(hits)-i-1]
                             break
                     if last["scan_param_id"]==h["scan_param_id"]:
-                        print "ERROR data chunck is too small increase n"
+                        print("ERROR data chunck is too small increase n")
                 self.analyze(hits,f.root)
                 start=start+len(hits)
         self.save()
-        
+
     def analyze(self, dat, fdat_root):
         if "scurve_fit" in self.res.keys():
             self.run_scurve_fit(dat,fdat_root)
         if "scurve" in self.res.keys():
             self.run_scurve(dat,fdat_root)
-            
+
     def save(self):
-        #print "========= save() start"
-        #print "========= save() keys",self.res.keys()
+        #print("========= save() start")
+        #print("========= save() keys",self.res.keys())
         if "scurve_fit" in self.res.keys():
             self.save_scurve_fit()
         if "scurve" in self.res.keys():
@@ -82,34 +82,34 @@ class AnalyzeLECnts():
                                description=buf.dtype,
                                title='BestPhase')
     def save_best_phase(self):
-        #print "========= save_best_phase() start"
+        #print("========= save_best_phase() start")
         with tb.open_file(self.fdat,"a") as f:
             end=len(f.root.LEHist)
             start=0
             tmpend=min(end,start+end)
             hist=f.root.LEHist[:]
-            #print "========= save_best_phase() n of LEHist =%d"%len(hist)
-            
-            #print "========= save_best_phase()",self.res["best_phase"]
-            #print "========= save_best_phase() hist.dtype",hist.dtype
+            #print("========= save_best_phase() n of LEHist =%d"%len(hist))
+
+            #print("========= save_best_phase()",self.res["best_phase"])
+            #print("========= save_best_phase() hist.dtype",hist.dtype)
             uni=np.unique(hist[self.res["best_phase"]])
             buf=np.empty(len(uni),dtype=f.root.BestPhase.dtype)
-            print "save_best_phase() number of LEhist", len(uni)
+            print("save_best_phase() number of LEhist", len(uni))
             for u_i,u in enumerate(uni):
                 dat=hist[hist[self.res["best_phase"]]==u]
                 a=np.argmax(dat["inj"])
                 buf[u_i]["inj"]=dat["inj"][a]
                 flg=0
                 le0=np.argmax(dat[a]["LE"][0,:])
-                #print le0
+                #print(le0)
                 for ph_i,ph in enumerate(self.phaselist[1:]):
                     le=np.argmax(dat[a]["LE"][ph_i+1,:])
-                    #print "get_le",le,"cnt",dat[a]["LE"][ph_i+1,le],
-                    #print "phase_idx",ph_i+1,"phase",ph
+                    #print("get_le",le,"cnt",dat[a]["LE"][ph_i+1,le],)
+                    #print("phase_idx",ph_i+1,"phase",ph)
                     if le0!=le:
                         flg=1
                     if flg==1 and dat[a]["LE"][ph_i+1,le]>=self.inj_n:
-                        print "========= save_best_phase() [%d %d] phase=%d le=%d"%(u["col"],u["row"],ph,le)
+                        print("========= save_best_phase() [%d %d] phase=%d le=%d"%(u["col"],u["row"],ph,le))
                         break
 
                 buf[u_i]["LE"]=le
@@ -119,7 +119,7 @@ class AnalyzeLECnts():
             f.root.BestPhase.append(buf)
             f.root.BestPhase.flush()
         return le,ph
-        
+
 ######### superimposed s-curve
     def init_scurve(self):
         with tb.open_file(self.fdat,"a") as f:
@@ -129,13 +129,13 @@ class AnalyzeLECnts():
                     if dat_dtype[i][0]==c:
                         dat_dtype.pop(i)
                         break
-            #print list(np.empty(0,dtype=dat_dtype).dtype.names)
+            #print(list(np.empty(0,dtype=dat_dtype).dtype.names))
             self.res["scurve"]=list(np.empty(0,dtype=dat_dtype).dtype.names)
-            
+
             s=self.injlist[1]-self.injlist[0]
             xbins=np.arange(np.min(self.injlist)-0.5*s,np.max(self.injlist)+0.5*s,s)
             ybins=np.arange(0.5,self.inj_n+9.5,1.0)
-            
+
             dat_dtype=dat_dtype+[("scurve","<i4",(len(xbins)-1,len(ybins)-1))]
             buf=np.zeros(1,dtype=dat_dtype)
             try:
@@ -160,7 +160,7 @@ class AnalyzeLECnts():
                 buf[u_i][c]=u[c]
             fdat_root.LEScurve.append(buf)
             fdat_root.LEScurve.flush()
-            
+
     def save_scurve(self):
         self.res["scurve"]=False
 
@@ -176,7 +176,7 @@ class AnalyzeLECnts():
                     if dat_type[i][0]==c:
                         dat_type.pop(i)
                         break
-           
+
            p_names=[]
            for d in dat_type:
               p_names.append(d[0])
@@ -210,7 +210,7 @@ class AnalyzeLECnts():
                     if dat_type[i][0]==c:
                         break
                 dat_type.pop(i)
-           
+
            p_names=[]
            for d in dat_type:
               p_names.append(d[0])
@@ -273,7 +273,7 @@ class AnalyzeLECnts():
                 inj=np.append(self.injlist[self.injlist<np.min(inj)],inj)
                 cnt=np.append(np.zeros(len(inj)-len(cnt)),cnt)
                 if len(inj)<3:
-                     print "strange data", u_i,uni.dtype.names,u,inj,cnt
+                     print("strange data", u_i,uni.dtype.names,u,inj,cnt)
                      fit=[float("nan")]*6
                 else:
                      fit = utils.fit_scurve(inj, cnt, A=self.inj_n, reverse=False) ##TODO go back to better one
@@ -291,4 +291,3 @@ class AnalyzeLECnts():
 
     def save_scurve_fit(self):
         self.res["scurve_fit"]=False
-        

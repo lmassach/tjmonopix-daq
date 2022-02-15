@@ -25,13 +25,13 @@ def get_timewalk_hist(hit_file, fout, show_plots=False):
             if len(hit_data) == 0:
                 break
             else:
-                print len(tdc_data)
-                print len(hit_data[hit_data['col'] == 253])
+                print(len(tdc_data))
+                print(len(hit_data[hit_data['col'] == 253]))
 
                 tlu_data = np.concatenate([tlu_data, hit_data[hit_data['col'] == 252]])
                 tdc_data = np.concatenate([tdc_data, hit_data[hit_data['col'] == 253]])
                 tj_data = np.concatenate([tj_data, hit_data[np.logical_and(hit_data['col'] < 112, hit_data['cnt'] == 0)]])
-                
+
                 start = end
                 end = start + chunk_size
 
@@ -70,12 +70,12 @@ def get_timewalk_hist(hit_file, fout, show_plots=False):
                 data_out[dat_i]["tlu"] = tlu_data[tlu_i]["cnt"]
                 dat_i=dat_i+1
                 tlu_i=tlu_i+1
-        #print tdc_i < len(tdc_data), dat_i < len(data_out), tlu_i < len(tlu_data)
-        #print tdc_i,dat_i,tlu_i
+        #print(tdc_i < len(tdc_data), dat_i < len(data_out), tlu_i < len(tlu_data))
+        #print(tdc_i,dat_i,tlu_i)
         return data_out[:dat_i]
 
     tlu_tdc_data = correlate_tdc_tlu(tdc_data, tlu_data, tlu_tdc_data, upper_lim, lower_lim)
-    print "# of correated data (TLU-TDC)",len(tlu_tdc_data)
+    print("# of correated data (TLU-TDC)",len(tlu_tdc_data))
 
     with tb.open_file(fout, "w") as f_o:
         description = np.zeros((1,), dtype=tlu_tdc_type).dtype
@@ -83,9 +83,9 @@ def get_timewalk_hist(hit_file, fout, show_plots=False):
             f_o.root, name="tdc_tlu", description=description, title='tdc_tlu')
         hit_table.append(tlu_tdc_data)
         hit_table.flush()
-    #print np.int64(tlu_tdc_data["tdc_timestamp"])-np.int64(tlu_tdc_data["tlu_timestamp"])
+    #print(np.int64(tlu_tdc_data["tdc_timestamp"])-np.int64(tlu_tdc_data["tlu_timestamp"]))
 
-    # print dat_i, tdc_i, tlu_i
+    # print(dat_i, tdc_i, tlu_i)
 
     if show_plots:
         plt.title("Delay between TDC and TLU timestamp")
@@ -99,7 +99,7 @@ def get_timewalk_hist(hit_file, fout, show_plots=False):
 
     data_out = np.empty(len(tj_data) + len(tlu_tdc_data),
                         dtype=[("token_timestamp", 'u8'), ("le", 'u2'), ("te", 'u2'), ("row", 'u2'), ("col", 'u2'),
-                               ("tdc_timestamp", 'u8'), ("tdc", 'u8'), 
+                               ("tdc_timestamp", 'u8'), ("tdc", 'u8'),
                                ("tlu_timestamp", 'u8'), ("tlu", 'u8')])
 
     @njit
@@ -132,7 +132,7 @@ def get_timewalk_hist(hit_file, fout, show_plots=False):
         return data_out[:i]
 
     data_out = correlate_tlu_tj(tlu_tdc_data, tj_data, data_out, upper, lower)
-    print len(data_out)
+    print(len(data_out))
 
     if show_plots:
         plt.title("Delay between TDC and token timestamp")
@@ -145,27 +145,27 @@ def get_timewalk_hist(hit_file, fout, show_plots=False):
         data_out["token_timestamp"], return_index=True, return_counts=True)
     tot = (data_out['te'] - data_out['le']) & 0x3F
 
-    print len(ts_indices)
+    print(len(ts_indices))
 
     # dat_max stores only hits that are seed pixels
     dat_max = np.empty(len(ts_indices),
                        dtype=[("token_timestamp", 'u8'), ("le", 'u2'), ("te", 'u2'), ("row", 'u2'), ("col", 'u2'),
-                              ("tdc_timestamp", 'u8'), ("tdc", 'u8'), 
+                              ("tdc_timestamp", 'u8'), ("tdc", 'u8'),
                               ("tlu_timestamp", 'u8'), ("tlu", 'u8')])
 
     for i, ts_index in enumerate(ts_indices):
         # max_i is the index of the hit that corresponds to a seed pixel (maximum charge)
         max_i = np.argmax(tot[i: i + cnt[i]])
-        dat_max[i] = data_out[i + max_i]        
+        dat_max[i] = data_out[i + max_i]
         dat_max[i]["tlu"] = cnt[i]
 
     # for i, pix in enumerate(mon_pixels):
     #     dat=dat_max[np.bitwise_and(dat_max['col']==p[1],dat_max['row']==p[2])]
-    #     print i,p,len(dat)
+    #     print(i,p,len(dat))
     #     if i==16:
     #         hist=np.histogram(np.int64(dat["tdc_timestamp"])-np.int64(dat["tlu_timestamp"]),
     #                           bins=np.arange(-200,0,1));
-    print "dat_max: ", len(dat_max),dat_max["col"][:100]
+    print("dat_max: ", len(dat_max),dat_max["col"][:100])
 
     dat = dat_max[np.logical_and(dat_max["col"] == mon_pixels[0][1], dat_max["row"] == mon_pixels[0][2])]
 
@@ -178,9 +178,9 @@ def get_timewalk_hist(hit_file, fout, show_plots=False):
     # plt.ylabel("ToT")
 
     # plt.legend()smb://sirrush.local/silab/Data_Testbeams/2018/20181604_tjmonopix_ELSA_hitorData/run_180418-135931/tjmono
-    # plt.show() 
+    # plt.show()
     bins=np.arange(0,2500,20)
-    plt.hist(data_out["tdc"][np.logical_and(data_out["col"] == mon_pixels[0][1], data_out["row"] == mon_pixels[0][2])], 
+    plt.hist(data_out["tdc"][np.logical_and(data_out["col"] == mon_pixels[0][1], data_out["row"] == mon_pixels[0][2])],
              histtype='step', bins=bins, label='All')
     plt.hist(dat["tdc"], histtype='step', bins=bins, label='Seed')
     plt.hist(dat["tdc"][dat["tlu"]==1],bins=bins)
@@ -263,9 +263,9 @@ if __name__ == "__main__":
     plt.hist()
     # mids = edges[:-1] + 0.5
     # duration = mids[hist > 0][-1] - mids[hist > 0][0]
-    # print mids[hist > 0][-1], mids[hist > 0][0]
-    # print duration / 0.64
+    # print(mids[hist > 0][-1], mids[hist > 0][0])
+    # print(duration / 0.64)
 
     # Number of hits that are out of time (more than 25ns late)
     # mids_start = mids[hist > 0][0]
-    # print np.sum(hist[mids > mids_start + 25 * 0.64])
+    # print(np.sum(hist[mids > mids_start + 25 * 0.64]))

@@ -23,7 +23,7 @@ scan_param_ids = np.empty(len(hits), dtype=np.uint16())
 
 for i in range(len(stops)):
     sel = np.logical_and(hits["timestamp"] >= starts[i], hits["timestamp"] < stops[i])
-    print i, stops[i], meta_data["scan_param_id"][i]
+    print(i, stops[i], meta_data["scan_param_id"][i])
     scan_param_ids[sel] = meta_data["scan_param_id"][i]
 
 # Add scan_param_ids to hit_array

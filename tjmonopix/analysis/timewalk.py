@@ -25,8 +25,8 @@ def get_timewalk_hist(hit_file, show_plots=False):
             if len(hit_data) == 0:
                 break
             else:
-                print len(tdc_data)
-                print len(hit_data[hit_data['col'] == 253])
+                print(len(tdc_data))
+                print(len(hit_data[hit_data['col'] == 253]))
 
                 tlu_data = np.concatenate([tlu_data, hit_data[hit_data['col'] == 252]])
                 tdc_data = np.concatenate([tdc_data, hit_data[hit_data['col'] == 253]])
@@ -66,15 +66,15 @@ def get_timewalk_hist(hit_file, show_plots=False):
                 data_out[dat_i]["tlu"] = tlu_data[tlu_i]["cnt"]
                 dat_i = dat_i + 1
                 tlu_i = tlu_i + 1
-        # print tdc_i < len(tdc_data), dat_i < len(data_out), tlu_i < len(tlu_data)
-        # print tdc_i,dat_i,tlu_i
+        # print(tdc_i < len(tdc_data), dat_i < len(data_out), tlu_i < len(tlu_data))
+        # print(tdc_i,dat_i,tlu_i)
         return data_out[:dat_i]
 
     tlu_tdc_data = correlate_tdc_tlu(tdc_data, tlu_data, tlu_tdc_data, upper_lim, lower_lim)
-    print "# of correated data (TLU-TDC)", len(tlu_tdc_data)
-    # print np.int64(tlu_tdc_data["tdc_timestamp"])-np.int64(tlu_tdc_data["tlu_timestamp"])
+    print("# of correated data (TLU-TDC)", len(tlu_tdc_data))
+    # print(np.int64(tlu_tdc_data["tdc_timestamp"])-np.int64(tlu_tdc_data["tlu_timestamp"]))
 
-    # print dat_i, tdc_i, tlu_i
+    # print(dat_i, tdc_i, tlu_i)
 
     if show_plots:
         plt.title("Delay between TDC and TLU timestamp")
@@ -121,7 +121,7 @@ def get_timewalk_hist(hit_file, show_plots=False):
         return data_out[:i]
 
     data_out = correlate_tlu_tj(tlu_tdc_data, tj_data, data_out, upper, lower)
-    print len(data_out)
+    print(len(data_out))
 
     if show_plots:
         plt.title("Delay between TDC and token timestamp")
@@ -134,7 +134,7 @@ def get_timewalk_hist(hit_file, show_plots=False):
         data_out["token_timestamp"], return_index=True, return_counts=True)
     tot = (data_out['te'] - data_out['le']) & 0x3F
 
-    print len(ts_indices)
+    print(len(ts_indices))
 
     # dat_max stores only hits that are seed pixels
     dat_max = np.empty(len(ts_indices),
@@ -149,11 +149,11 @@ def get_timewalk_hist(hit_file, show_plots=False):
 
     # for i, pix in enumerate(mon_pixels):
     #     dat=dat_max[np.bitwise_and(dat_max['col']==p[1],dat_max['row']==p[2])]
-    #     print i,p,len(dat)
+    #     print(i,p,len(dat))
     #     if i==16:
     #         hist=np.histogram(np.int64(dat["tdc_timestamp"])-np.int64(dat["tlu_timestamp"]),
     #                           bins=np.arange(-200,0,1));
-    print "dat_max: ", len(dat_max), dat_max["col"][:100]
+    print("dat_max: ", len(dat_max), dat_max["col"][:100])
 
     dat = dat_max[np.logical_and(dat_max["col"] == mon_pixels[0][1], dat_max["row"] == mon_pixels[0][2])]
 
@@ -166,7 +166,7 @@ def get_timewalk_hist(hit_file, show_plots=False):
     # plt.ylabel("ToT")
 
     # plt.legend()
-    # plt.show() 
+    # plt.show()
 
     return dat
 
@@ -240,9 +240,9 @@ if __name__ == "__main__":
     plt.show()
     # mids = edges[:-1] + 0.5
     # duration = mids[hist > 0][-1] - mids[hist > 0][0]
-    # print mids[hist > 0][-1], mids[hist > 0][0]
-    # print duration / 0.64
+    # print(mids[hist > 0][-1], mids[hist > 0][0])
+    # print(duration / 0.64)
 
     # Number of hits that are out of time (more than 25ns late)
     # mids_start = mids[hist > 0][0]
-    # print np.sum(hist[mids > mids_start + 25 * 0.64])
+    # print(np.sum(hist[mids > mids_start + 25 * 0.64]))
