@@ -3,10 +3,10 @@ import logging
 import yaml
 import time
 import tables as tb
-import online_monitor.sender
+from .online_monitor import sender
 
 from contextlib import contextmanager
-from tjmonopix import TJMonoPix
+from .tjmonopix import TJMonoPix
 from fifo_readout import FifoReadout
 
 
@@ -97,7 +97,7 @@ class ScanBase(object):
             self.socket = None
         else:
             try:
-                self.socket = online_monitor.sender.init(self.socket)
+                self.socket = sender.init(self.socket)
                 self.logger.info('ScanBase.start:data_send.data_send_init connected')
             except Exception:
                 self.logger.warn('ScanBase.start:data_send.data_send_init failed addr={:s}'.format(self.socket))
@@ -123,7 +123,7 @@ class ScanBase(object):
         # Close socket from Online Monitor
         if self.socket is not None:
             try:
-                online_monitor.sender.close(self.socket)
+                sender.close(self.socket)
             except Exception:
                 pass
         return self.output_filename + '.h5'
@@ -181,11 +181,11 @@ class ScanBase(object):
 
         if self.socket is not None:
             try:
-                online_monitor.sender.send_data(self.socket, data_tuple)
+                sender.send_data(self.socket, data_tuple)
             except Exception:
                 self.logger.warn('ScanBase.handle_data:sender.send_data failed')
                 try:
-                    online_monitor.sender.close(self.socket)
+                    sender.close(self.socket)
                 except Exception:
                     pass
                 self.socket = None

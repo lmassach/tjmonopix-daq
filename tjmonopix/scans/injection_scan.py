@@ -19,7 +19,7 @@ local_configuration={"injlist": None, #np.arange(0.1,0.6,0.05),
 
 class InjectionScan(scan_base.ScanBase):
     scan_id = "injection_scan"
-            
+
     def scan(self,**kwargs):
         """ List of kwargs
             n_mask_col: number of columns injected at once
@@ -32,7 +32,7 @@ class InjectionScan(scan_base.ScanBase):
         """
         ####################
         ## get scan params from args
-        
+
         collist=kwargs.pop("collist")
         if isinstance(collist,int):
             collist=[collist]
@@ -53,20 +53,20 @@ class InjectionScan(scan_base.ScanBase):
         phaselist=kwargs.pop("phaselist")
         if phaselist is None or len(phaselist)==0:
             phaselist=[self.dut["inj"].get_phase()]
-            
+
         rowlist=kwargs.pop("rowlist")
         inj_th_phase = np.reshape(np.stack(np.meshgrid(thlist,rowlist,injlist,phaselist),axis=4),[-1,4])
-        
+
         with_mon=kwargs.pop("with_mon")
-        
+
         debug=kwargs.pop("debug",0)
-        
+
         if (debug & 0x1)==1:
-            print "++++++++ injlist",len(injlist),injlist
-            print "++++++++ thlist",len(thlist),thlist
-            print "++++++++ phaselist",len(phaselist),phaselist
-            print "++++++++ collist",len(collist),collist
-            print "++++++++ with_mon",with_mon
+            print("++++++++ injlist",len(injlist),injlist)
+            print("++++++++ thlist",len(thlist),thlist)
+            print("++++++++ phaselist",len(phaselist),phaselist)
+            print("++++++++ collist",len(collist),collist)
+            print("++++++++ with_mon",with_mon)
 
         param_dtype=[("scan_param_id","<i4"),("collist","<i4",(n_mask_col,))]
 
@@ -81,9 +81,9 @@ class InjectionScan(scan_base.ScanBase):
         ####################
         ## create a table for scan_params
         description=np.zeros((1,),dtype=param_dtype).dtype
-        self.scan_param_table = self.h5_file.create_table(self.h5_file.root, 
+        self.scan_param_table = self.h5_file.create_table(self.h5_file.root,
                       name='scan_parameters', title='scan_parameters',
-                      description=description, 
+                      description=description,
                       filters=tb.Filters(complib='zlib', complevel=5, fletcher32=False))
         self.kwargs.append("thlist")
         self.kwargs.append(yaml.safe_dump(inj_th_phase[:,0].tolist()))
@@ -93,7 +93,7 @@ class InjectionScan(scan_base.ScanBase):
         self.kwargs.append(yaml.safe_dump(inj_th_phase[:,3].tolist()))
         self.kwargs.append("rowlist")
         self.kwargs.append(yaml.safe_dump(inj_th_phase[:,1].tolist()))
-        
+
         t0=time.time()
         scan_param_id=0
         inj_delay_org=self.dut["inj"].DELAY
@@ -116,9 +116,9 @@ class InjectionScan(scan_base.ScanBase):
             #if g is not None:  TODO
             #  for g_key in g.keys():
             #    self.scan_param_table.row[g_key]=g[g_key]
-            
+
             ####################
-            ## start read fifo 
+            ## start read fifo
             cnt=0
             for mask_i in range(mask_n):
                 self.dut['CONF_SR']['INJ_ROW'].setall(False)
@@ -161,11 +161,11 @@ class InjectionScan(scan_base.ScanBase):
                     if (debug & 0x4)==4:
                         pre_cnt=cnt
                         cnt=self.fifo_readout.get_record_count()
-                        self.logger.info('scan_param_id=%d dat=%d: cols=%s'%(scan_param_id,cnt-pre_cnt,str(c_tmp[:c_i+1])))    
+                        self.logger.info('scan_param_id=%d dat=%d: cols=%s'%(scan_param_id,cnt-pre_cnt,str(c_tmp[:c_i+1])))
                     ####################
                     ## wait before closing fifo
                     time.sleep(0.5)
-                    scan_param_id=scan_param_id+1   
+                    scan_param_id=scan_param_id+1
             self.dut.stop_all()
             pre_cnt=cnt
             cnt=self.fifo_readout.get_record_count()
@@ -181,7 +181,7 @@ class InjectionScan(scan_base.ScanBase):
             fraw=data_file
         fhit=fraw[:-7]+'hit.h5'
         fev=fraw[:-7]+'ev.h5'
-        
+
         ##interpret and event_build
         import tjmonopix.analysis.interpreter_idx as interpreter_idx
         interpreter_idx.interpret_idx_h5(fraw,fhit,debug=0x8+0x3)
@@ -189,7 +189,7 @@ class InjectionScan(scan_base.ScanBase):
         import tjmonopix.analysis.event_builder_inj as event_builder_inj
         event_builder_inj.build_inj_h5(fhit,fraw,fev,n=10000000)
         #self.logger.info('timestamp assigned %s'%(fev))
-        
+
         ##analyze
         import tjmonopix.analysis.analyze_hits as analyze_hits
         ana=analyze_hits.AnalyzeHits(fev,fraw)
@@ -198,7 +198,7 @@ class InjectionScan(scan_base.ScanBase):
         ana.run()
         return fev
 
-    @classmethod    
+    @classmethod
     def plot(self,data_file=None):
         if data_file[-3:]!=".h5":
             fraw=self.output_filename+'.h5'
@@ -212,10 +212,10 @@ class InjectionScan(scan_base.ScanBase):
 if __name__ == "__main__":
     from monopix_daq import monopix
     m=monopix.Monopix()
-    
+
     #fname=time.strftime("%Y%m%d_%H%M%S_simples_can")
     #fname=(os.path.join(monopix_extra_functions.OUPUT_DIR,"simple_scan"),fname)
-    
+
     scan = ThScan(m,online_monitor_addr="tcp://127.0.0.1:6500")
     scan.start(**local_configuration)
     scan.analyze()
