@@ -4,6 +4,8 @@ import numpy as np
 import tables
 import yaml
 
+from .utils import ensure_str
+
 TS_TLU = 251
 TS_INJ = 252
 TS_MON = 253
@@ -111,14 +113,14 @@ def build_inj_h5(fhit, fraw, fout, n=500000, debug=0x2):
     with tables.open_file(fraw) as f:
         status = yaml.safe_load(f.root.meta_data.attrs.status)
         for i in range(0, len(f.root.kwargs), 2):
-            if f.root.kwargs[i] == "injlist":
-                injlist = yaml.safe_load(f.root.kwargs[i + 1])
-            elif f.root.kwargs[i] == "thlist":
-                thlist = yaml.safe_load(f.root.kwargs[i + 1])
-            elif f.root.kwargs[i] == "phaselist":
-                phaselist = yaml.safe_load(f.root.kwargs[i + 1])
-            elif f.root.kwargs[i] == "rowlist":
-                rowlist = yaml.safe_load(f.root.kwargs[i + 1])
+            if ensure_str(f.root.kwargs[i]) == "injlist":
+                injlist = yaml.safe_load(ensure_str(f.root.kwargs[i + 1]))
+            elif ensure_str(f.root.kwargs[i]) == "thlist":
+                thlist = yaml.safe_load(ensure_str(f.root.kwargs[i + 1]))
+            elif ensure_str(f.root.kwargs[i]) == "phaselist":
+                phaselist = yaml.safe_load(ensure_str(f.root.kwargs[i + 1]))
+            elif ensure_str(f.root.kwargs[i]) == "rowlist":
+                rowlist = yaml.safe_load(ensure_str(f.root.kwargs[i + 1]))
     inj_period = status['inj']["WIDTH"] + status['inj']["DELAY"]
     inj_n = status['inj']["REPEAT"]
     sid = -1
@@ -135,12 +137,12 @@ def build_inj_h5(fhit, fraw, fout, n=500000, debug=0x2):
             while start < end:  # # this does not work, need to read with one chunck
                 tmpend = min(end, start + n)
                 dat = f.root.Hits[start:tmpend]
-                print("data (inj_n %d,inj_loop %d): INJ=%d MONO=%d MON=%d" % ()
+                print("data (inj_n %d,inj_loop %d): INJ=%d MONO=%d MON=%d" % (
                     inj_n, len(injlist),
                     len(np.where(dat["col"] == TS_INJ)[0]),
                     len(np.where(dat["col"] < COL_SIZE)[0]),
                     len(np.where(dat["col"] == TS_MON)[0])
-                )
+                ))
                 if end == tmpend:
                     mode = 0 | debug
                 else:

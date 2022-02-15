@@ -6,9 +6,9 @@ from scipy.optimize import curve_fit, leastsq
 def scurve(x, A, mu, sigma):
     return 0.5*A*erf((x-mu)/(np.sqrt(2)*sigma))+0.5*A
 
+
 def scurve_rev(x, A, mu, sigma):
     return 0.5*A*erf((mu-x)/(np.sqrt(2)*sigma))+0.5*A
-
 
 
 def fit_scurve1(xarray,yarray,A=None,cut_ratio=0.05,reverse=True,debug=0):
@@ -74,7 +74,6 @@ def fit_scurve1(xarray,yarray,A=None,cut_ratio=0.05,reverse=True,debug=0):
     return p[0],p[1],p[2],err[0],err[1],err[2]
 
 
-
 def fit_scurve(xarray,yarray,A=None,cut_ratio=0.05,reverse=True,debug=0):
     if A is None:
         A=np.max(yarray)
@@ -138,3 +137,13 @@ def scurve_from_fit(th, A_fit,mu_fit,sigma_fit,reverse=True,n=500):
         return x,scurve_rev(x,A_fit,mu_fit,sigma_fit)
     else:
         return x,scurve(x,A_fit,mu_fit,sigma_fit)
+
+
+def ensure_str(s):
+    """Converts bytes objects to str.
+
+    Written for compatibility with Python2-generated H5 files.
+    """
+    if isinstance(s, str):
+        return s
+    return str(s, encoding="utf8")

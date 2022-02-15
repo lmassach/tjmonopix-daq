@@ -4,6 +4,8 @@ import tables as tb
 import yaml
 import logging
 
+from .utils import ensure_str
+
 COL_SIZE = 112
 ROW_SIZE = 224
 
@@ -253,9 +255,9 @@ class AnalyzeHits():
     def init_le_hist(self):
         with tb.open_file(self.fraw) as f:
             for i in range(0,len(f.root.kwargs),2):
-                if f.root.kwargs[i]=="phaselist":
+                if ensure_str(f.root.kwargs[i])=="phaselist":
                     phaselist=np.sort(np.unique(np.array(
-                          yaml.safe_load(f.root.kwargs[i+1]))))
+                          yaml.safe_load(ensure_str(f.root.kwargs[i+1])))))
         with tb.open_file(self.fhit,"a") as f_o:
             try:
                 f_o.remove_node(f_o.root,"LEHist")

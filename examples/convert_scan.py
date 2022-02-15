@@ -14,6 +14,17 @@ import tables
 import uproot
 import numpy
 
+
+def ensure_str(s):
+    """Converts bytes objects to str.
+
+    Written for compatibility with Python2-generated H5 files.
+    """
+    if isinstance(s, str):
+        return s
+    return str(s, encoding="utf8")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -83,4 +94,4 @@ if __name__ == "__main__":
             ))
         # KWargs  from scan.h5 -> a single TString in the root file
         output_file["kwargs"] = uproot.to_writable(
-            "\n".join(str(x, encoding="utf8") for x in input_file_scan.root.kwargs))
+            "\n".join(ensure_str(x) for x in input_file_scan.root.kwargs))

@@ -6,6 +6,8 @@ import logging
 import matplotlib.pyplot as plt
 
 import tjmonopix.analysis.utils as utils
+from .utils import ensure_str
+
 COL_SIZE = 112
 ROW_SIZE = 224
 
@@ -18,10 +20,10 @@ class AnalyzeCnts():
         with tb.open_file(self.fraw) as f:
             param=f.root.scan_parameters[:]
             for i in range(0,len(f.root.kwargs),2):
-                if f.root.kwargs[i]=="injlist":
-                    self.injlist=np.sort(np.unique(yaml.safe_load(f.root.kwargs[i+1])))
-                elif f.root.kwargs[i]=="phaselist":
-                    self.phaselist=np.sort(np.unique(yaml.safe_load(f.root.kwargs[i+1])))
+                if ensure_str(f.root.kwargs[i])=="injlist":
+                    self.injlist=np.sort(np.unique(yaml.safe_load(ensure_str(f.root.kwargs[i+1]))))
+                elif ensure_str(f.root.kwargs[i])=="phaselist":
+                    self.phaselist=np.sort(np.unique(yaml.safe_load(ensure_str(f.root.kwargs[i+1]))))
             self.inj_n=yaml.safe_load(f.root.meta_data.attrs.status)["inj"]["REPEAT"]
 
     def run(self,n=10000000):
