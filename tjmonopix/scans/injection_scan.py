@@ -151,7 +151,7 @@ class InjectionScan(scan_base.ScanBase):
                         self.dut['CONF_SR']['MASKH'].setall(False)
                         self.dut['CONF_SR']['MASKD'].setall(False)
                         self.dut['CONF_SR']['MASKH'][row] = True
-                        print("row", row)
+                        #print("row", row)
                         
                         
                         #if row>0 and self.dut['CONF_SR']['INJ_ROW'][row]!=True:
