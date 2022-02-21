@@ -10,12 +10,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input_file", help="The _scan.h5 file.")
     args = parser.parse_args()
-    
+
     logger = logging.getLogger("main")
-    logger.addHandler(logging.StreamHandler())  # Log to stderr
-    logger.addHandler(logging.FileHandler("ourTWanalysis.log"))  # and also to file
+    f = logging.Formatter("%(asctime)s %(process)5d %(levelname)-8s %(name)-15s %(message)s", '%Y-%m-%d %H:%M:%S')
+    h = logging.StreamHandler()  # Log to console (stderr)
+    h.setFormatter(f)
+    logger.addHandler(h)
+    h = logging.FileHandler("ourTWanalysis.log")  # and also to file
+    h.setFormatter(f)
+    logger.addHandler(h)
     logger.info("Launched script with args %s", args)
-    
+
     try:
         start_time = datetime.datetime.now()
         output_filename = InjectionScan.analyze(args.input_file)

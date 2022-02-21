@@ -6,8 +6,6 @@ import argparse
 import logging
 import numpy as np
 from tjmonopix.tjmonopix import TJMonoPix
-from tjmonopix.online_monitor import noise_monitor
-from tjmonopix.analysis import analysis_functions
 from tjmonopix.scans.injection_scan import InjectionScan
 
 # Analog front-end
@@ -38,8 +36,8 @@ MAX_DELTA_CNT = 5
 
 def convert_option_list(l, dtype=int):
     """Converts l to a numpy array.
-    If l has two items, returns the range between the two items (both included). 
-    
+    If l has two items, returns the range between the two items (both included).
+
     If l has one item, i.e. l = [a], the array is [a].
     If l has two item, i.e. l = [a, b], the array is [a, a+1, ..., b].
     If l has more than two items, the array has the same items as l.
@@ -70,13 +68,18 @@ if __name__ == "__main__":
     rows = convert_option_list(args.rows)
     injs = convert_option_list(args.injs)
     thrs = convert_option_list(args.thrs)
-    
+
     logger = logging.getLogger("main")
-    logger.addHandler(logging.StreamHandler())  # Log to stderr
-    logger.addHandler(logging.FileHandler("ourTW.log"))  # and also to file
+    f = logging.Formatter("%(asctime)s %(levelname)-8s %(name)-15s %(message)s", '%Y-%m-%d %H:%M:%S')
+    h = logging.StreamHandler()  # Log to console (stderr)
+    h.setFormatter(f)
+    logger.addHandler(h)
+    h = logging.FileHandler("ourTW.log")  # and also to file
+    h.setFormatter(f)
+    logger.addHandler(h)
     logger.info("Launched script with args %s", args)
     logger.info("Scanning %d cols, %d rows, %d injs and %d thrs", len(cols), len(rows), len(injs), len(thrs))
-    
+
     try:
         # Init chip (with power reset, we want a power-cycle to avoid issues)
         logger.info("Initializing chip...")
@@ -89,14 +92,14 @@ if __name__ == "__main__":
         chip['data_rx'].CONF_STOP = 105 #default 45
         logger.info("Chip initialized")
         time.sleep(1)
-        
+
         # Get and log power status
         ps = chip.get_power_status()
         logger.info("Power status")
         for k in sorted(ps.keys()):
             logger.info("%s: %s", k, ps[k])
         time.sleep(1)
-        
+
         # Setup analog front-end
         logger.info("Setting up analog front-end...")
         vl = chip.set_vl_dacunits(VL_DAC,1)
@@ -110,7 +113,7 @@ if __name__ == "__main__":
         chip.write_conf()
         logger.info("Analog front-end setup done")
         time.sleep(1)
-        
+
         # Run automask to check if the chip is behaving (default args are OK)
         logger.info("Checking noisy pixels...")
         noisy_pixels, n_disabled_pixels, mask = chip.auto_mask()
@@ -124,7 +127,7 @@ if __name__ == "__main__":
             raise RuntimeError("Too high residual occupancy")
         logger.info("Noisy pixels check done")
         time.sleep(1)
-        
+
         # Setup injection and test it on one pixel
         logger.info("Setting up injection...")
         chip['inj'].set_delay(DELAY)
@@ -153,7 +156,7 @@ if __name__ == "__main__":
             raise RuntimeError("Too high occupancy on non-injected pixels")
         logger.info("Injection check done")
         time.sleep(1)
-        
+
         logger.info("Launching the scan...")
         scans = InjectionScan(dut=chip)
         start_time = datetime.datetime.now()
@@ -167,4 +170,3 @@ if __name__ == "__main__":
     except:
         logger.exception("An unhandled exception occurred.")
         raise
-    
