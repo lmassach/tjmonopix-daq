@@ -9,7 +9,6 @@ from contextlib import contextmanager
 from tjmonopix import TJMonoPix
 from fifo_readout import FifoReadout
 
-
 class ScanBase(object):
     """
     Basic run meta class
@@ -104,6 +103,9 @@ class ScanBase(object):
                 self.socket = None
 
         # Execute scan
+        time.sleep(2)
+        print("sleeping")
+
         self.fifo_readout = FifoReadout(self.dut)
         self.scan(**kwargs)
         self.fifo_readout.print_readout_status()

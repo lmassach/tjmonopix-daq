@@ -121,12 +121,24 @@ class InjectionScan(scan_base.ScanBase):
             ## start read fifo 
             cnt=0
             for mask_i in range(mask_n):
+                
+                self.dut['CONF_SR']['EN_HV'].setall(False)
+
+            
+            
                 self.dut['CONF_SR']['INJ_ROW'].setall(False)
                 self.dut['CONF_SR']['COL_PULSE_SEL'].setall(False)
                 c_tmp=np.ones(n_mask_col,dtype=int)*-1
                 for c_i,c in enumerate(collist[mask_i::mask_n]):
+
+                    self.dut['CONF_SR']['EN_HV'][c//2] = True
+
+
                     self.dut['CONF_SR']['COL_PULSE_SEL'][(self.dut.fl_n * 112) + c ] = 1
                     c_tmp[c_i]=c
+                    
+
+
                 self.scan_param_table.row['collist'] = c_tmp
                 self.scan_param_table.row['scan_param_id'] = scan_param_id
                 self.scan_param_table.row.append()
@@ -134,6 +146,14 @@ class InjectionScan(scan_base.ScanBase):
                 with self.readout(scan_param_id=scan_param_id,fill_buffer=False,clear_buffer=True,
                               readout_interval=0.001):
                     for th,row,inj,phase in inj_th_phase:
+                        
+                        self.dut['CONF_SR']['MASKV'].setall(False)
+                        self.dut['CONF_SR']['MASKH'].setall(False)
+                        self.dut['CONF_SR']['MASKD'].setall(False)
+                        self.dut['CONF_SR']['MASKH'][row] = True
+                        #print("row", row)
+                        
+                        
                         #if row>0 and self.dut['CONF_SR']['INJ_ROW'][row]!=True:
                         self.dut['CONF_SR']['INJ_ROW'].setall(False)
                         self.dut['CONF_SR']['INJ_ROW'][row] = bitarray.bitarray('1')
@@ -220,3 +240,8 @@ if __name__ == "__main__":
     scan.start(**local_configuration)
     scan.analyze()
     scan.plot()
+    
+    
+    
+    
+
