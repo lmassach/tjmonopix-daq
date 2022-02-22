@@ -1,36 +1,41 @@
 # tjmonopix-daq
-[![Build Status](https://travis-ci.org/SiLab-Bonn/tjmonopix-daq.svg?branch=development)](https://travis-ci.org/SiLab-Bonn/tjmonopix-daq)
+<!-- [![Build Status](https://travis-ci.org/SiLab-Bonn/tjmonopix-daq.svg?branch=development)](https://travis-ci.org/SiLab-Bonn/tjmonopix-daq) -->
 
 Data acquisition software for the TJMonoPix pixel detector.
 
 # Installation
-You need to have python and the following packages installed:
+You need to have python2 and the following packages installed:
 `basil-daq>=3.0.0 bitarray matplotlib numba numpy pytables pyyaml scipy tqdm`
 Then run `python setup.py develop` from root folder.
 
 1. Making a GitHub account and push your improvement to Silab-Bonn/tjmonopix-daq is a good idea.
 2. Install miniconda
-    1. miniconda (2.7): [https://docs.conda.io/en/latest/miniconda.html](https://docs.conda.io/en/latest/miniconda.html)
+    1. Miniconda2 (Python 2.7): [installers archive](https://repo.anaconda.com/miniconda/) (use the `Miniconda2-latest` for your OS), [install instructions](https://conda.io/projects/conda/en/latest/user-guide/install/index.html)
+    2. Advised to make an installation (or virtual environment) specifically for this
 3. Install packages
     1. Install packages from conda
-       > conda install bitarray matplotlib numba numpy pytables pyyaml scipy tqdm six
-    2. basil : 
-       [https://github.com/Silab-Bonn/basil](https://github.com/Silab-Bonn/basil)
-       > git clone https://github.com/Silab-Bonn/basil  
-       > cd basil  
-       > python setup.py develop  
+       ```
+       conda install bitarray matplotlib numba numpy pytables pyyaml scipy tqdm six pyzmq psutil pyqtgraph nose testfixtures jupyter notebook
+       ```
+    2. basil: <https://github.com/Silab-Bonn/basil>
+       ```
+       git clone https://github.com/Silab-Bonn/basil
+       cd basil
+       python setup.py develop
+       ```
 4. Install packages (optional)
-    1. online_monitor : 
-       [https://github.com/Silab-Bonn/online_monitor](https://github.com/Silab-Bonn/online_monitor)
-       > conda install pzmq psutil pzqtgraph nose testfixtures  
-       > git clone https://github.com/Silab-Bonn/online_monitor  
-       > python setup.py develop  
-    2. pixle_clusterizer : [https://github.com/Silab-Bonn/pixle_clusterizer](https://github.com/Silab-Bonn/pixle_clusterizer)
-       > git clone https://github.com/Silab-Bonn/pixle_clusterizer  
-       > cd pixle_clusterizer  
-       > python setup.py develop  
-    3. jupyter, notebook:
-       > conda install jupyter, notebook  
+    1. online_monitor: <https://github.com/Silab-Bonn/online_monitor>
+       ```
+       git clone https://github.com/Silab-Bonn/online_monitor
+       cd online_monitor
+       python setup.py develop
+       ```
+    2. pixel_clusterizer: <https://github.com/Silab-Bonn/pixel_clusterizer>
+       ```
+       git clone https://github.com/Silab-Bonn/pixle_clusterizer
+       cd pixle_clusterizer
+       python setup.py develop
+       ```
 
 # Usage
 To run a scan, create a YAML file with the configuration, for example:
@@ -63,8 +68,8 @@ It contains the DUT settings as well as addresses for [Online Monitor](https://g
 2. Apply PMOS/PWELL=-6V with current limit of 200uA
 3. Apply MIO3=6V, GPAC=5V and wait for LED=ON
 4. Start notebook
-   > cd examples  
-   > jupyter notebook  
+   > cd examples
+   > jupyter notebook
 4. Open and run the chip file
 5. Make yaml file, run scans, and etc.
 6. To restart the notebook, change no_power_reset=True if HV!=0V.
@@ -84,7 +89,7 @@ It contains the DUT settings as well as addresses for [Online Monitor](https://g
 6. Write to the flash
 
 # How to make firmware (MIO3)
-1. install vivado 
+1. install vivado
     1. Web (free) version is OK
     2. 2016.1 has been tested
 2. Download SiTCP netlist
@@ -93,11 +98,11 @@ It contains the DUT settings as well as addresses for [Online Monitor](https://g
 2. Start vivado, open project and select firmware/vivado/tjmonopix.xpr
 3. In Flow Manager -> Project Manager->Project Setting -> General -> Language Options -> Verilog options
     1. delete all basil directories in Verilog Include Files Search Paths
-    2. add basil directories 
+    2. add basil directories
          1. <path_to_basil>/basil/firmware/modules
          2. <path_to_basil>/basil/firmware/modules/utils
 4. Click Flow Manager -> Program and Debug -> Generates Bitstream
-5. Program FPGA 
+5. Program FPGA
     1. Right click Flow Manager -> Program and Debug -> Hardware manager -> Open Target
     2. then select AutoConnect
     3. Right click xc7k160t
@@ -108,8 +113,5 @@ It contains the DUT settings as well as addresses for [Online Monitor](https://g
     1. Right click at xc7k160t_0
     2. Add flash (n25q256-3.3v-spi-x1_x2_x4)_
     3. Select bin file
-    4. Select pull-up 
+    4. Select pull-up
     5. Click OK and wait a bit
-
-
-
