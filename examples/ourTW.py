@@ -1,5 +1,7 @@
 #!/usr/bin/env python2
 """Automated TW measurement script"""
+import os
+import subprocess
 import time
 import datetime
 import argparse
@@ -33,6 +35,9 @@ COL_TO_INJECT = 66
 ROW_TO_INJECT = 10
 MAX_DELTA_CNT = 5
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
+ANA_SCRIPT = os.path.join(SCRIPT_DIR, "ourTWanalysis.py")
+
 
 def convert_option_list(l, dtype=int):
     """Converts l to a numpy array.
@@ -63,6 +68,8 @@ if __name__ == "__main__":
                         help="The threshold range or value.")
     parser.add_argument("-n", "--n-cols", type=int, default=5,
                         help="Number of columns to scan at a time.")
+    parser.add_argument("--launch-analysis", action="store_true",
+                        help="Launch analysis in the background at the end.")
     args = parser.parse_args()
     cols = convert_option_list(args.cols)
     rows = convert_option_list(args.rows)
@@ -166,6 +173,12 @@ if __name__ == "__main__":
         end_time = datetime.datetime.now()
         logger.info("Scan done in %s", end_time - start_time)
         logger.info("Output file: %s", output_filename)
+
+        if args.launch_analysis:
+            cmd = [ANA_SCRIPT, output_filename]
+            logger.info("Launching analysis in the background, executing: %s" % cmd)
+            subprocess.Popen(cmd)
+
         logger.info("End of script")
     except:
         logger.exception("An unhandled exception occurred.")
