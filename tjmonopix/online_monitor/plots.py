@@ -207,14 +207,17 @@ def tj_plot(chip, dt=0.2, wait_inj=False):
     # Plot of the pixel matrix (2D histogram of number of hits vs row/col)
     plt.figure()
     plt.subplot(1, 2, 1)
-    plt.hist2d(hits["col"], hits["row"], bins=[112,224], range=[[0,112],[0,224]],
-               )#norm=matplotlib.colors.LogNorm(vmin=1))
+    maschera = 0
+    mask = (hits["col"]>maschera) & (hits["row"]>maschera)
+    x = hits["col"][mask]
+    y = hits["row"][mask]
+    plt.hist2d(x, y, bins=[112,224], range=[[0,112],[0,224]], norm = LogNorm(vmin=1))
     plt.colorbar()
     plt.xlabel('columns')
 
     # Histogram of the hits-per-pixel distribution (to choose noise threshold)
     plt.subplot(1, 2, 2)
-    plt.hist(hits_per_pixel, bins=min(100, np.max(hits_per_pixel)+1), range=[-0.5, np.max(hits_per_pixel)+0.5])
+    plt.hist(hits_per_pixel, bins=np.max(hits_per_pixel)+1, range=[-0.5, np.max(hits_per_pixel)+0.5])
     plt.yscale('log')
     plt.grid(axis="y")
     plt.xlabel('hits per pixel')
