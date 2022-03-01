@@ -1,3 +1,7 @@
 @echo off
-REM (start, step, stop)
-for /l %%x in (15, 1, 25) do python ourTW.py -c 0 111 -r 0 223 -i 1 40 -t %%x --launch-analysis
+REM (start, step, stop) 
+python ourTW.py -c 0 111 -r 0 223 -i 1 40 -t 35 
+python ourTW.py -c 0 111 -r 0 223 -i 1 40 -t 37 
+python ourTW.py -c 0 111 -r 0 223 -i 1 40 -t 40 
+python ourTW.py -c 0 111 -r 0 223 -i 1 40 -t 43 
+

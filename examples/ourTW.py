@@ -68,7 +68,7 @@ if __name__ == "__main__":
                         help="The threshold range or value.")
     parser.add_argument("-n", "--n-cols", type=int, default=5,
                         help="Number of columns to scan at a time.")
-    parser.add_argument("--launch-analysis", action="store_true",
+    parser.add_argument("--launch_analysis", action="store_true",
                         help="Launch analysis in the background at the end.")
     args = parser.parse_args()
     cols = convert_option_list(args.cols)
