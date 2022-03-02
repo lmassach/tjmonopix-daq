@@ -68,7 +68,7 @@ if __name__ == "__main__":
     ps = chip.get_power_status()
     print("Power status")
     for k in sorted(ps.keys()):
-        print("%s: %s", k, ps[k])
+        print("%s: %s" % (k, ps[k]))
 
     # Setup analog front-end
     print("Setting up analog front-end...")
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         chip.reset_ibias()
         chip['fifo'].reset()  # Clear everything that was received until now
         start_time = datetime.datetime.now()
-        hit_table.start_time = start_time.astimezone().isoformat()
+        hit_table.attrs.start_time = start_time.isoformat()
         print("%s BEGINNING ACQUISITION" % start_time.isoformat())
         wanted_end_time = start_time + datetime.timedelta(seconds=args.seconds)
         image, all_data = None, None
@@ -141,13 +141,14 @@ if __name__ == "__main__":
                 else:
                     image.set_data(all_data)
 
-        hit_table.end_time = end_time.astimezone().isoformat()
-        hit_table.duration = (end_time - start_time).total_seconds()
+        hit_table.attrs.end_time = end_time.isoformat()
+        hit_table.attrs.duration = (end_time - start_time).total_seconds()
         print("%s ACQUISITION END" % end_time.isoformat())
         print("ACTUAL DURATION %s" % (end_time - start_time))
 
     print("Output file closed, end of script")
     if args.show:
+        print("The script will terminate when you close the plot window")
         # Keep the figure open until it is closed manually
         plt.ioff()
         plt.show()
