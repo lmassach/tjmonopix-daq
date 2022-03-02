@@ -26,8 +26,6 @@ OUTPUT_FILE = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S_acq.h5")
 HIT_DTYPE = np.dtype(
     [("col", "<u1"), ("row", "<u2"), ("le", "<u1"), ("te", "<u1"), ("noise", "<u1")])
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
@@ -50,11 +48,9 @@ if __name__ == "__main__":
         print("Output file exists already, use -f to overwrite")
         sys.exit(2)
 
-    # Init chip
+    # Init chip (with power reset => power-cycle it)
     print("Initializing chip...")
-    chip = TJMonoPix(
-        conf=os.path.join(SCRIPT_DIR, "../tjmonopix/tjmonopix_mio3.yaml"),
-        no_power_reset=False)  # With power reset => power-cycle
+    chip = TJMonoPix(conf="../tjmonopix/tjmonopix_mio3.yaml", no_power_reset=False)
     chip.init(fl="EN_HV")
     chip['data_rx'].CONF_START_FREEZE = 64  # default 3
     chip['data_rx'].CONF_STOP_FREEZE = 100  # default 40
