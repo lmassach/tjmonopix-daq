@@ -1035,12 +1035,33 @@ class FakeTJMonoPix(TJMonoPix):
             for i, arg in enumerate(args):
                 self[i] = arg
             self.update(kwargs)
+            self.last_reset = time.time()
 
         def write(self):
             pass
 
         def reset(self):
+            self.last_reset = time.time()
+
+        def read(self, *args, **kwargs):
+            return 0
+
+        def start(self):
             pass
+
+        def get_data(self):
+            n = min(1000000, 1000 * (time.time() - self.last_reset()))
+            self.last_reset = time.time()
+            col = np.random.randint(112, size=n)
+            row = np.random.randint(224, size=n)
+            le = np.random.randint(64, size=n)
+            te = np.random.randint(64, size=n)
+            res = np.zeros((n,), FakeTJMonoPix.HIT_DTYPE)
+            res["col"] = col
+            res["row"] = row
+            res["le"] = le
+            res["te"] = te
+            return res
 
         @property
         def is_ready(self):
@@ -1050,9 +1071,18 @@ class FakeTJMonoPix(TJMonoPix):
             if attr.starts_with("set_"):
                 def method(*args, **kwargs):
                     self[attr[4:]] = FakeTJMonoPix.ConfDict(*args, **kwargs)
-            def method(*args, **kwargs):
-                pass #TODO
+            elif attr.starts_with("get_"):
+                def method(*args, **kwargs):
+                    try:
+                        return self[attr][0]
+                    except:
+                        return self[attr]
+            else:
+                def method(*args, **kwargs):
+                    print("%s called" % attr)
             return method
+
+    HIT_DTYPE = np.dtype([("col", "<u1"), ("row", "<u2"), ("le", "<u1"), ("te", "<u1"), ("noise", "<u1")])
 
     def __init__(self, conf=None, no_power_reset=False):
         # No call to super().__init__ !
@@ -1098,6 +1128,11 @@ class FakeTJMonoPix(TJMonoPix):
 
     def get_configuration(self):
         return self._conf | self._registers
+
+    def interpret_data(self, raw_data):
+        if raw_data.dtype == FakeTJMonoPix.HIT_DTYPE:
+            return raw_data
+        return super().interpret_data(raw_data)
 
     def __getitem__(self, key):
         return self._registers[key]

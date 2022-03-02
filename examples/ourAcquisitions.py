@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tables
 import yaml
-from tjmonopix.tjmonopix import TJMonoPix
+from tjmonopix.tjmonopix import TJMonoPix, FakeTJMonoPix
 
 # Analog front-end default values
 VRESET_DAC = 35
@@ -43,10 +43,14 @@ if __name__ == "__main__":
                         help="Skip noisy pixels masking.")
     parser.add_argument("-i", "--interval", type=float, default=2,
                         help="The time between two successive data reads in seconds.")
+    parser.add_argument("--test", action="store_true",
+                        help="Use a 'simulated' chip to test the script.")
     args = parser.parse_args()
     if not args.overwrite and os.path.exists(args.output):
         print("Output file exists already, use -f to overwrite")
         sys.exit(2)
+    if args.test:
+        TJMonoPix = FakeTJMonoPix
 
     # Init chip (with power reset => power-cycle it)
     print("Initializing chip...")
