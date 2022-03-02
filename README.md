@@ -12,10 +12,15 @@ Then run `python setup.py develop` from root folder.
 2. Install miniconda
     1. Miniconda2 (Python 2.7): [installers archive](https://repo.anaconda.com/miniconda/) (use the `Miniconda2-latest` for your OS), [install instructions](https://conda.io/projects/conda/en/latest/user-guide/install/index.html)
     2. Advised to make an installation (or virtual environment) specifically for this
+    3. You will probably need to run these commands _in your conda installation directory_
+       ```bash
+       mkdir -p etc/conda/deactivate.d
+       mkdir -p etc/conda/activate.d
+       ```
 3. Install packages
     1. Install packages from conda
        ```
-       conda install bitarray matplotlib numba numpy pytables pyyaml scipy tqdm six pyzmq psutil pyqtgraph nose testfixtures jupyter notebook
+       conda install decorator=4 bitarray matplotlib numba numpy pytables pyyaml scipy tqdm six pyzmq psutil pyqtgraph nose testfixtures jupyter notebook
        ```
     2. basil: <https://github.com/Silab-Bonn/basil>
        ```

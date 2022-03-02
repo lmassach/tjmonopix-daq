@@ -127,3 +127,6 @@ ENV/
 # pyDev project files
 .project
 .pydevproject
+
+# conda
+activate
