@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tables
 import yaml
-from tjmonopix.tjmonopix import TJMonoPix
+from tjmonopix.tjmonopix import TJMonoPix, FakeTJMonoPix
 
 # Analog front-end default values
 VRESET_DAC = 35
@@ -25,8 +25,6 @@ OUTPUT_FILE = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S_acq.h5")
 # Hit data type
 HIT_DTYPE = np.dtype(
     [("col", "<u1"), ("row", "<u2"), ("le", "<u1"), ("te", "<u1"), ("noise", "<u1")])
-
-SCRIPT_DIR = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
 
 
 if __name__ == "__main__":
@@ -45,16 +43,18 @@ if __name__ == "__main__":
                         help="Skip noisy pixels masking.")
     parser.add_argument("-i", "--interval", type=float, default=2,
                         help="The time between two successive data reads in seconds.")
+    parser.add_argument("--test", action="store_true",
+                        help="Use a 'simulated' chip to test the script.")
     args = parser.parse_args()
     if not args.overwrite and os.path.exists(args.output):
         print("Output file exists already, use -f to overwrite")
         sys.exit(2)
+    if args.test:
+        TJMonoPix = FakeTJMonoPix
 
-    # Init chip
+    # Init chip (with power reset => power-cycle it)
     print("Initializing chip...")
-    chip = TJMonoPix(
-        conf=os.path.join(SCRIPT_DIR, "../tjmonopix/tjmonopix_mio3.yaml"),
-        no_power_reset=False)  # With power reset => power-cycle
+    chip = TJMonoPix(conf="../tjmonopix/tjmonopix_mio3.yaml", no_power_reset=False)
     chip.init(fl="EN_HV")
     chip['data_rx'].CONF_START_FREEZE = 64  # default 3
     chip['data_rx'].CONF_STOP_FREEZE = 100  # default 40
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     ps = chip.get_power_status()
     print("Power status")
     for k in sorted(ps.keys()):
-        print("%s: %s", k, ps[k])
+        print("%s: %s" % (k, ps[k]))
 
     # Setup analog front-end
     print("Setting up analog front-end...")
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         chip.reset_ibias()
         chip['fifo'].reset()  # Clear everything that was received until now
         start_time = datetime.datetime.now()
-        hit_table.start_time = start_time.astimezone().isoformat()
+        hit_table.attrs.start_time = start_time.isoformat()
         print("%s BEGINNING ACQUISITION" % start_time.isoformat())
         wanted_end_time = start_time + datetime.timedelta(seconds=args.seconds)
         image, all_data = None, None
@@ -141,13 +141,14 @@ if __name__ == "__main__":
                 else:
                     image.set_data(all_data)
 
-        hit_table.end_time = end_time.astimezone().isoformat()
-        hit_table.duration = (end_time - start_time).total_seconds()
+        hit_table.attrs.end_time = end_time.isoformat()
+        hit_table.attrs.duration = (end_time - start_time).total_seconds()
         print("%s ACQUISITION END" % end_time.isoformat())
         print("ACTUAL DURATION %s" % (end_time - start_time))
 
     print("Output file closed, end of script")
     if args.show:
+        print("The script will terminate when you close the plot window")
         # Keep the figure open until it is closed manually
         plt.ioff()
         plt.show()
