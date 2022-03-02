@@ -2,6 +2,7 @@
 """Acquires data and optionally shows it in real time."""
 import argparse
 import datetime
+from math import floor, log10
 import os
 import sys
 import time
@@ -113,7 +114,7 @@ if __name__ == "__main__":
         hit_table.attrs.start_time = start_time.isoformat()
         print("%s BEGINNING ACQUISITION" % start_time.isoformat())
         wanted_end_time = start_time + datetime.timedelta(seconds=args.seconds)
-        image, all_data = None, None
+        image, all_data, colorbar = None, None, None
         while datetime.datetime.now() < wanted_end_time:
             # Sleep for args.interval seconds, or until the end of the acquisition (whichever comes first)
             sleep_time = min(args.interval, (wanted_end_time - datetime.datetime.now()).total_seconds())
@@ -138,8 +139,15 @@ if __name__ == "__main__":
                     all_data += data
                 if image is None:
                     image = plt.imshow(all_data, origin='lower')
+                    colorbar = plt.colorbar()
                 else:
                     image.set_data(all_data)
+                    colorbar.set_clim(vmin=0, vmax=all_data.max())
+                    # Set the ticks of the colorbar to round numbers
+                    o = floor(log10(all_data.max()))
+                    t = floor(all_data.max() / 10**o)
+                    colorbar.set_ticks(np.linspace(0, t * 10**o, num=t+1, endpoint=True))
+                    colorbar.draw_all()
 
         hit_table.attrs.end_time = end_time.isoformat()
         hit_table.attrs.duration = (end_time - start_time).total_seconds()
