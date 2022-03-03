@@ -1,5 +1,6 @@
 # Output results
 /examples/*.txt
+*.h5
 # Gedit Backups
 *~
 # IDE

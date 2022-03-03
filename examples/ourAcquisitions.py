@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 import numpy as np
 import tables
 import yaml
@@ -73,7 +74,6 @@ if __name__ == "__main__":
 
     # Setup analog front-end
     print("Setting up analog front-end...")
-    chip.write_conf()
     chip.set_vreset_dacunits(VRESET_DAC, 1)
     chip.set_ireset_dacunits(IRESET_DAC, 1, 1)
     chip.set_ithr_dacunits(ITHR_DAC, 1)
@@ -89,6 +89,8 @@ if __name__ == "__main__":
         noisy_pixels, n_disabled_pixels, mask = chip.auto_mask()
         print("Masking done")
         time.sleep(1)
+    else:
+        chip.unmask_all()
 
     # Do the actual acquisition
     print("Opening output file")
@@ -138,15 +140,16 @@ if __name__ == "__main__":
                 else:
                     all_data += data
                 if image is None:
-                    image = plt.imshow(all_data, origin='lower')
+                    image = plt.imshow(all_data.transpose(), origin='lower', norm=LogNorm())
                     colorbar = plt.colorbar()
                 else:
-                    image.set_data(all_data)
-                    colorbar.set_clim(vmin=0, vmax=all_data.max())
+                    image.set_data(all_data.transpose())
+                    colorbar.set_clim(vmin=0.1, vmax=max(1,all_data.max()))
                     # Set the ticks of the colorbar to round numbers
-                    o = floor(log10(all_data.max()))
-                    t = floor(all_data.max() / 10**o)
-                    colorbar.set_ticks(np.linspace(0, t * 10**o, num=t+1, endpoint=True))
+                    o = floor(log10(max(1, all_data.max())))
+                    t = max(1, floor(all_data.max() / 10**o))
+                    # colorbar.set_ticks(np.linspace(0, t * 10**o, num=t+1, endpoint=True))
+                    colorbar.set_ticks(np.logspace(-1, o+1, num=o+3, endpoint=True))
                     colorbar.draw_all()
 
         hit_table.attrs.end_time = end_time.isoformat()
