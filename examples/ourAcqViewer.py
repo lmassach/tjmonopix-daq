@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 """Plots the .h5 file of a past acquisition, and allows to find noisy pixels."""
 import argparse
-import sys
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -37,11 +36,7 @@ if __name__ == "__main__":
     hits_tot = (hits_te - hits_le) & 0x3F
     del hits_le, hits_te
 
-    # Allow opening plots while the script is still running
-    plt.ion()
     fig, ax = plt.subplots(1, 2)
-    # Terminate script when the figure is closed
-    fig.canvas.mpl_connect('close_event', lambda evt: sys.exit())
 
     # Plot the 2D histogram of the hits
     hist2d, _, _ = np.histogram2d(
@@ -65,6 +60,4 @@ if __name__ == "__main__":
     ax[1].set_yscale('log')
     ax[1].grid(axis='y')
 
-    # Allow the figure to redraw
-    while True:
-        plt.pause(2)
+    plt.show()
