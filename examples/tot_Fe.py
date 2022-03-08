@@ -29,5 +29,6 @@ if __name__ == '__main__' :
         n, bins, patches = plt.hist(tot, bins = n_bins, range = range, label = legend, alpha = 0.4)
 
 
+
     plt.show()
     plt.ion()

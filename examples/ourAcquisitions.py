@@ -6,6 +6,7 @@ from math import floor, log10
 import os
 import sys
 import time
+from bitarray import bitarray
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import numpy as np
@@ -20,6 +21,11 @@ IRESET_DAC = 2
 ITHR_DAC = 5
 IDB_DAC = 50
 IBIAS_DAC = 100
+
+# Masks, found during a IDB=60 scan with no source or injection with auto_mask @ 2 hits / 0.2 s
+MASKD = bitarray('1011111111111111111000100111111110010111111111110001101101110111111001010010111010010111001101111110110011011110111010110100010110001001110010011000010101100010000010100011001100100100011110010010000010010001011111000000000101000100011000110100111001110100010110010101110110111101001010111111011111101101111111111101011110101111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111')
+MASKH = bitarray('10010111100000100010110110001001010101010101100011010000000001000100011001100010110000011101101000000000100010111110101001000011011000111100000000110110010010000110100111010101011011010100011010000111001101000001111010111000')
+MASKV = bitarray('0000100010000010001110100001000000000000000101000100000000000000000000111100111011110101001100000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000')
 
 # Default output file
 OUTPUT_FILE = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S_acq.h5")
@@ -41,8 +47,8 @@ if __name__ == "__main__":
                         help="The threshold (IDB) value (in DAC)")
     parser.add_argument("--show", action="store_true",
                         help="Shows a plot in realtime.")
-    parser.add_argument("--no-automask", dest="automask", action="store_false",
-                        help="Skip noisy pixels masking.")
+    parser.add_argument("--mask-cols", nargs="*", type=int, default=None,
+                        help="Skip automask, mask this range of columns.")
     parser.add_argument("-i", "--interval", type=float, default=2,
                         help="The time between two successive data reads in seconds.")
     parser.add_argument("--test", action="store_true",
@@ -84,13 +90,37 @@ if __name__ == "__main__":
     time.sleep(1)
 
     # Run automask to check if the chip is behaving (default args are OK)
-    if args.automask:
+    if args.mask_cols is None:
         print("Masking noisy pixels...")
-        noisy_pixels, n_disabled_pixels, mask = chip.auto_mask()
+        chip.standard_auto_mask()
         print("Masking done")
         time.sleep(1)
-    else:
+    elif len(args.mask_cols) == 0:
         chip.unmask_all()
+    else:
+        chip['CONF_SR'][chip.SET['fl']].setall(False)
+        chip['CONF_SR']['EN_OUT'][chip.fl_n] = False
+        chip['CONF_SR']['MASKD'].setall(False)
+        chip['CONF_SR']['MASKH'].setall(False)
+        chip['CONF_SR']['MASKV'].setall(True)
+        if len(args.mask_cols) == 2:
+            cols = range(args.mask_cols[0], args.mask_cols[1]+1)
+        else:
+            cols = args.mask_cols
+        for col in cols:
+            chip['CONF_SR']['MASKV'][chip.fl_n*112+col] = False
+        chip.write_conf()
+        chip['CONF_SR'][chip.SET['fl']].setall(True)
+        chip.write_conf()
+    # chip['CONF_SR'][chip.SET['fl']].setall(False)
+    # chip['CONF_SR']['EN_OUT'][chip.fl_n] = False
+    # chip['CONF_SR']['MASKD'] = MASKD
+    # chip['CONF_SR']['MASKV'] = MASKV
+    # chip['CONF_SR']['MASKH'] = MASKH
+    # chip.write_conf()
+    # time.sleep(1)
+    # chip['CONF_SR'][chip.SET['fl']].setall(True)
+    # chip.write_conf()
 
     # Do the actual acquisition
     print("Opening output file")
@@ -105,7 +135,7 @@ if __name__ == "__main__":
         if args.show:
             # Enter matplotlib interactive mode and open a figure
             plt.ion()
-            fig, ax = plt.subplots()
+            fig, axs = plt.subplots(ncols=2)
         # Configure the chip for receiving data
         print("Preparing chip for acquisition")
         chip.enable_data_rx()
@@ -116,7 +146,7 @@ if __name__ == "__main__":
         hit_table.attrs.start_time = start_time.isoformat()
         print("%s BEGINNING ACQUISITION" % start_time.isoformat())
         wanted_end_time = start_time + datetime.timedelta(seconds=args.seconds)
-        image, all_data, colorbar = None, None, None
+        all_data, images, colorbars = None, [None, None], [None, None]
         while datetime.datetime.now() < wanted_end_time:
             # Sleep for args.interval seconds, or until the end of the acquisition (whichever comes first)
             sleep_time = min(args.interval, (wanted_end_time - datetime.datetime.now()).total_seconds())
@@ -126,31 +156,47 @@ if __name__ == "__main__":
                 time.sleep(sleep_time)
             # Retrieve the hits acquired until now
             end_time = datetime.datetime.now()
+            
+            """
             hits = chip.interpret_data(chip['fifo'].get_data())
+            tot = (hits["te"]- hits["le"])%0x3F
+            print(tot)
+            """ 
             # Write the hits to the h5 file
             hit_table.append(hits)
             hit_table.flush()  # Write to file immediately, so data is on disk
             print("Received %d hits" % len(hits))
-            if args.show:
+            if args.show and len(hits) != 0:
                 # Update the plot
                 data, x, y = np.histogram2d(hits["col"], hits["row"], bins=[112,224],
                                             range=[[0,112],[0,224]])
                 if all_data is None:
                     all_data = data
+                    #all_data += 0.1
                 else:
                     all_data += data
-                if image is None:
-                    image = plt.imshow(all_data.transpose(), origin='lower', norm=LogNorm())
-                    colorbar = plt.colorbar()
+                if images[0] is None:
+                    images[0] = axs[0].imshow(all_data.transpose(), origin='lower', norm=LogNorm())
+                    colorbars[0] = plt.colorbar(images[0], ax=axs[0])
+                    images[1] = axs[1].imshow(all_data.transpose(), origin='lower')
+                    colorbars[1] = plt.colorbar(images[1], ax=axs[1])
+                    
+                    """
+                    images[2] = axs[1].hist(tot, bins = max(range)-min(range)+1, range = (0, 60))
+                    """
                 else:
-                    image.set_data(all_data.transpose())
-                    colorbar.set_clim(vmin=0.1, vmax=max(1,all_data.max()))
                     # Set the ticks of the colorbar to round numbers
-                    o = floor(log10(max(1, all_data.max())))
-                    t = max(1, floor(all_data.max() / 10**o))
-                    # colorbar.set_ticks(np.linspace(0, t * 10**o, num=t+1, endpoint=True))
-                    colorbar.set_ticks(np.logspace(-1, o+1, num=o+3, endpoint=True))
-                    colorbar.draw_all()
+                    top = max(1, all_data.max())
+                    o = floor(log10(top))
+                    t = max(1, floor(top / 10**o))
+                    images[0].set_data(all_data.transpose())
+                    colorbars[0].set_clim(vmin=0.1, vmax=top)
+                    colorbars[0].set_ticks(np.logspace(-1, o+1, num=o+3, endpoint=True))
+                    colorbars[0].draw_all()
+                    images[1].set_data(all_data.transpose())
+                    colorbars[1].set_clim(vmin=0, vmax=top)
+                    colorbars[1].set_ticks(np.linspace(0, t * 10**o, num=t+1, endpoint=True))
+                    colorbars[1].draw_all()
 
         hit_table.attrs.end_time = end_time.isoformat()
         hit_table.attrs.duration = (end_time - start_time).total_seconds()
@@ -162,5 +208,6 @@ if __name__ == "__main__":
         print("The script will terminate when you close the plot window")
         # Keep the figure open until it is closed manually
         plt.ioff()
+        fig.savefig(args.output[:-3] + ".png")
         plt.show()
         plt.close()

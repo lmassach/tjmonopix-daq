@@ -851,12 +851,20 @@ class TJMonoPix(Dut):
             hits[i] = cnt
         return hits
 
-    def auto_mask(self, th=2, step=50, dt=0.2):
+    def auto_mask(self, th=2, step=50, dt=0.2, already_masked=set()):
+        """Automatically finds and masks noisy pixels.
+        
+        `th`: masks the pixels that receive >= this number of hits in `dt`
+        `dt`: the time to wait for hits in seconds
+        `step`: unmask this number of rows/columns/diagonals at a time
+                (useful if there are pixels that fill up the fifo)
+        `already_masked`: list of pixels (fl_n, col, row) to be kept masked
+        """
         self.mask_all()
         self.enable_data_rx()
 
         # Set of noisy pixels to fill, as tuples (flavor, col, row)
-        noisy_pixels = set()
+        noisy_pixels = set(already_masked)
 
         def find_new_noisy_pixels():
             # Get hits and see which pixels are noisy
@@ -947,6 +955,13 @@ class TJMonoPix(Dut):
     def unmask_all(self):
         """Unmask all pixels"""
         self.mask_all(True)
+
+    def standard_auto_mask(self):
+        """Executes a standard set of auto_mask calls."""
+        noisy_pixels, _, _ = self.auto_mask(th=1000, dt=0.02)
+        noisy_pixels, _, _ = self.auto_mask(th=10, dt=0.02, already_masked=noisy_pixels)
+        noisy_pixels, total_disabled, mask = self.auto_mask(th=2, step=100, dt=0.2, already_masked=noisy_pixels)
+        return noisy_pixels, total_disabled, mask
 
     def enable_data_rx(self, wait=0.1):
         """Enable data rx FIFO"""
