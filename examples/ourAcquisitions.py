@@ -135,7 +135,7 @@ if __name__ == "__main__":
         if args.show:
             # Enter matplotlib interactive mode and open a figure
             plt.ion()
-            fig, axs = plt.subplots(ncols=2)
+            fig, axs = plt.subplots(ncols=3)
         # Configure the chip for receiving data
         print("Preparing chip for acquisition")
         chip.enable_data_rx()
@@ -157,11 +157,11 @@ if __name__ == "__main__":
             # Retrieve the hits acquired until now
             end_time = datetime.datetime.now()
             
-            """
+            
             hits = chip.interpret_data(chip['fifo'].get_data())
             tot = (hits["te"]- hits["le"])%0x3F
             print(tot)
-            """ 
+             
             # Write the hits to the h5 file
             hit_table.append(hits)
             hit_table.flush()  # Write to file immediately, so data is on disk
@@ -181,9 +181,9 @@ if __name__ == "__main__":
                     images[1] = axs[1].imshow(all_data.transpose(), origin='lower')
                     colorbars[1] = plt.colorbar(images[1], ax=axs[1])
                     
-                    """
-                    images[2] = axs[1].hist(tot, bins = max(range)-min(range)+1, range = (0, 60))
-                    """
+                    
+                    images[2] = axs[1].hist(tot, bins = 61, range = (0, 60))
+                    
                 else:
                     # Set the ticks of the colorbar to round numbers
                     top = max(1, all_data.max())
