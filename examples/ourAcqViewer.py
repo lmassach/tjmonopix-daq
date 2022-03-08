@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 """Plots the .h5 file of a past acquisition, and allows to find noisy pixels."""
 import argparse
-import sys
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -26,7 +25,14 @@ def get_log_spaced_bins(max_value):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input_file", help="The acquisition .h5 file.")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-n", metavar="MIN_HITS", type=int, default=None,
+                       help="Returns a list of pixels with more than MIN_HITS hits.")
+    group.add_argument("-f", metavar="MIN_FREQ", type=float, default=None,
+                       help="Returns a list of pixels with more than MIN_FREQ hits per second.")
     args = parser.parse_args()
+    min_hits = args.n
+    duration = 0
 
     # Reads hits from the h5 file (col, row and ToT)
     with tables.open_file(args.input_file) as input_file:
@@ -34,14 +40,18 @@ if __name__ == "__main__":
         hits_row = input_file.root.Hits.col("row")
         hits_le = input_file.root.Hits.col("le")
         hits_te = input_file.root.Hits.col("te")
+        try:
+            duration = float(input_file.root.Hits.attrs.duration)
+            if args.f is not None:
+                min_hits = int(args.f * duration)
+        except Exception:
+            if args.f is not None:
+                print("Missing duration attribute in the H5 file.")
+                print("Please use -n instead of -f (see --help for details).")
     hits_tot = (hits_te - hits_le) & 0x3F
     del hits_le, hits_te
 
-    # Allow opening plots while the script is still running
-    plt.ion()
     fig, ax = plt.subplots(1, 2)
-    # Terminate script when the figure is closed
-    fig.canvas.mpl_connect('close_event', lambda evt: sys.exit())
 
     # Plot the 2D histogram of the hits
     hist2d, _, _ = np.histogram2d(
@@ -65,6 +75,14 @@ if __name__ == "__main__":
     ax[1].set_yscale('log')
     ax[1].grid(axis='y')
 
-    # Allow the figure to redraw
-    while True:
-        plt.pause(2)
+    # Return a list of noisy pixels
+    if min_hits:
+        if duration:
+            print("List of noisy pixels (pixels with >= %d hits = %.3g hits/s)" % (min_hits, min_hits / duration))
+        else:
+            print("List of noisy pixels (pixels with >= %d hits)" % min_hits)
+        print("NOISY_PIXELS = [")
+        for col, row in zip(*np.nonzero(hist2d >= min_hits)):
+            print("    (%d, %d)," % (col, row))
+        print("]")
+    plt.show()
