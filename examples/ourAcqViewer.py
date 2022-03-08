@@ -1,10 +1,14 @@
 #!/usr/bin/env python2
 """Plots the .h5 file of a past acquisition, and allows to find noisy pixels."""
 import argparse
+import sys
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 import numpy as np
 import tables
+
+COLOR = "\x1b[36m" if sys.stdout.isatty() else ""
+RESET = "\x1b[0m" if sys.stdout.isatty() else ""
 
 
 def get_log_spaced_bins(max_value):
@@ -81,12 +85,17 @@ if __name__ == "__main__":
             print("List of noisy pixels (pixels with >= %d hits = %.3g hits/s)" % (min_hits, min_hits / duration))
         else:
             print("List of noisy pixels (pixels with >= %d hits)" % min_hits)
-        print("NOISY_PIXELS = [")
+        print(COLOR + "NOISY_PIXELS = [")
         n = 0
         for col, row in zip(*np.nonzero(hist2d >= min_hits)):
             print("    (%d, %d)," % (col, row))
             n += 1
-        print("]")
-        print("Number of noisy pixels = %d" % n)
+        print("]" + RESET)
+        print("Number of noisy pixels = %s%d%s" % (COLOR, n, RESET))
+        print("Use this code to set the mask to the pixels above:")
+        print(COLOR + "chip.unmask_all()")
+        print("for col, row in NOISY_PIXELS:")
+        print("    chip.mask(chip.fl_n, col, row)")
+        print("chip['CONF_SR'].write()" + RESET)
 
     plt.show()
