@@ -135,7 +135,7 @@ if __name__ == "__main__":
         if args.show:
             # Enter matplotlib interactive mode and open a figure
             plt.ion()
-            fig, axs = plt.subplots(ncols=3)
+            fig, axs = plt.subplots(ncols=4)
         # Configure the chip for receiving data
         print("Preparing chip for acquisition")
         chip.enable_data_rx()
@@ -146,7 +146,7 @@ if __name__ == "__main__":
         hit_table.attrs.start_time = start_time.isoformat()
         print("%s BEGINNING ACQUISITION" % start_time.isoformat())
         wanted_end_time = start_time + datetime.timedelta(seconds=args.seconds)
-        all_data, images, colorbars = None, [None, None], [None, None]
+        all_data, images, colorbars = None, [None, None, None, None], [None, None]
         while datetime.datetime.now() < wanted_end_time:
             # Sleep for args.interval seconds, or until the end of the acquisition (whichever comes first)
             sleep_time = min(args.interval, (wanted_end_time - datetime.datetime.now()).total_seconds())
@@ -156,11 +156,7 @@ if __name__ == "__main__":
                 time.sleep(sleep_time)
             # Retrieve the hits acquired until now
             end_time = datetime.datetime.now()
-            
-            
             hits = chip.interpret_data(chip['fifo'].get_data())
-            tot = (hits["te"]- hits["le"])%0x3F
-            print(tot)
              
             # Write the hits to the h5 file
             hit_table.append(hits)
@@ -170,20 +166,39 @@ if __name__ == "__main__":
                 # Update the plot
                 data, x, y = np.histogram2d(hits["col"], hits["row"], bins=[112,224],
                                             range=[[0,112],[0,224]])
+
+                tot = (hits["te"]- hits["le"])%0x3F 
+                """
+                selected_col_pixel = 0
+                selected_row_pixel = 249
+                mask = (hits["col"] == selected_col_pixel) & (hits["row"] == selected_row_pixel) #questa maschera non funziona: la lunghezza di tot[mask] è zero.
+                """
                 if all_data is None:
                     all_data = data
+                    all_tot = tot
+                    all_tot_single_pixel = tot[mask]                                       
                     #all_data += 0.1
                 else:
                     all_data += data
+                    all_tot = np.concatenate((all_tot, tot))
+                    all_tot_single_pixel = np.concatenate((all_tot_single_pixel, tot[mask]))
+                    print("len(all_tot_single_pixel)", len(tot[mask]))
+                    
                 if images[0] is None:
+                    #legend_colormap = '%d hits' % (len(tot))
                     images[0] = axs[0].imshow(all_data.transpose(), origin='lower', norm=LogNorm())
                     colorbars[0] = plt.colorbar(images[0], ax=axs[0])
                     images[1] = axs[1].imshow(all_data.transpose(), origin='lower')
                     colorbars[1] = plt.colorbar(images[1], ax=axs[1])
+                    images[2] = axs[2].hist(all_tot, bins = 61, range = (0, 60))
+                    #images[2].axs[2].set_yscale("log")
                     
                     
-                    images[2] = axs[1].hist(tot, bins = 61, range = (0, 60))
-                    
+                
+                    """
+                    legend_tot = 'col, row: %d %d' % (selected_col_pixel, selected_row_pixel)
+                    images[3] = axs[3].hist(all_tot_single_pixel, bins = 61, range = (0, 60))
+                    """
                 else:
                     # Set the ticks of the colorbar to round numbers
                     top = max(1, all_data.max())
@@ -197,7 +212,7 @@ if __name__ == "__main__":
                     colorbars[1].set_clim(vmin=0, vmax=top)
                     colorbars[1].set_ticks(np.linspace(0, t * 10**o, num=t+1, endpoint=True))
                     colorbars[1].draw_all()
-
+                    
         hit_table.attrs.end_time = end_time.isoformat()
         hit_table.attrs.duration = (end_time - start_time).total_seconds()
         print("%s ACQUISITION END" % end_time.isoformat())
