@@ -53,15 +53,15 @@ if __name__ == "__main__":
     colorbar.set_label("Hit count / pixel")
 
     # Plot the histogram of the number of hits per pixel, with log-scale x
-    counts_per_pixel = hist2d.reshape(-1) + 0.9
-    counts_order = max(int(np.ceil(np.log10(counts_per_pixel.max()))), 1)
-    counts_max = 10**counts_order
-    n_bins = 10 * counts_order + 1
-    # ax[1].hist(counts_per_pixel, bins=get_log_spaced_bins(counts_per_pixel.max()))
-    ax[1].hist(counts_per_pixel, log=True, bins=n_bins, range=(0.9,counts_max))
+    counts_per_pixel = hist2d.reshape(-1) + 0.1
+    hist1d, hist1d_edges = np.histogram(
+        counts_per_pixel, bins=get_log_spaced_bins(counts_per_pixel.max()))
+    # Normalize by bin width
+    hist1d = hist1d.astype(np.float) / np.ceil(hist1d_edges[1:] - hist1d_edges[:-1])
+    ax[1].bar(hist1d_edges[:-1], hist1d, hist1d_edges[1:] - hist1d_edges[:-1], align='edge')
     ax[1].set_xlabel("Hits per pixel")
     ax[1].set_xscale('log')
-    ax[1].set_ylabel("Pixel count / bin")
+    ax[1].set_ylabel("Pixel count / (1 hit)")
     ax[1].set_yscale('log')
     ax[1].grid(axis='y')
 
