@@ -82,7 +82,11 @@ if __name__ == "__main__":
         else:
             print("List of noisy pixels (pixels with >= %d hits)" % min_hits)
         print("NOISY_PIXELS = [")
+        n = 0
         for col, row in zip(*np.nonzero(hist2d >= min_hits)):
             print("    (%d, %d)," % (col, row))
+            n += 1
         print("]")
+        print("Number of noisy pixels = %d" % n)
+
     plt.show()
