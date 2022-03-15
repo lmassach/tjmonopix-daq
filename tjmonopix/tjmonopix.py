@@ -925,8 +925,8 @@ class TJMonoPix(Dut):
         for flavor, col, row in noisy_pixels:
             self.mask(flavor, col, row)
         self['CONF_SR'].write()
-        self['fifo'].reset()
         time.sleep(0.3)
+        self['fifo'].reset()
         self.reset_ibias()
 
         print("Noisy pixels: %d" % len(noisy_pixels))
@@ -956,11 +956,11 @@ class TJMonoPix(Dut):
         """Unmask all pixels"""
         self.mask_all(True)
 
-    def standard_auto_mask(self):
+    def standard_auto_mask(self, th1=1000, th2=10, th3=2):
         """Executes a standard set of auto_mask calls."""
-        noisy_pixels, _, _ = self.auto_mask(th=1000, dt=0.02)
-        noisy_pixels, _, _ = self.auto_mask(th=10, dt=0.02, already_masked=noisy_pixels)
-        noisy_pixels, total_disabled, mask = self.auto_mask(th=2, step=100, dt=0.2, already_masked=noisy_pixels)
+        noisy_pixels, _, _ = self.auto_mask(th=th1, dt=0.02)
+        noisy_pixels, _, _ = self.auto_mask(th=th2, dt=0.02, already_masked=noisy_pixels)
+        noisy_pixels, total_disabled, mask = self.auto_mask(th=th3, step=100, dt=0.2, already_masked=noisy_pixels)
         return noisy_pixels, total_disabled, mask
 
     def enable_data_rx(self, wait=0.1):

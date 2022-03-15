@@ -68,6 +68,8 @@ if __name__ == "__main__":
                         help="The threshold range or value.")
     parser.add_argument("-n", "--n-cols", type=int, default=5,
                         help="Number of columns to scan at a time.")
+    parser.add_argument("--no-mask", action="store_true",
+                        help="Skip mask/noisy pixels check.")
     parser.add_argument("--launch_analysis", action="store_true",
                         help="Launch analysis in the background at the end.")
     args = parser.parse_args()
@@ -122,18 +124,23 @@ if __name__ == "__main__":
         time.sleep(1)
 
         # Run automask to check if the chip is behaving (default args are OK)
-        logger.info("Checking noisy pixels...")
-        noisy_pixels, n_disabled_pixels, mask = chip.auto_mask()
-        if len(noisy_pixels) > MAX_NOISY_PIXELS:
-            logger.critical("Too many noisy pixels (%d), aborting", len(noisy_pixels))
-            raise RuntimeError("Too many noisy pixels")
-        logger.info("Masking done, checking residual occupancy...")
-        pix_tmp, cnt = chip.get_occupancy(0.2)
-        if cnt.sum() > MAX_RESIDUAL_OCCUPANCY:
-            logger.critical("Too high residual occupancy after masking (%d hits), aborting", cnt.sum())
-            raise RuntimeError("Too high residual occupancy")
-        logger.info("Noisy pixels check done")
-        time.sleep(1)
+        if args.no_mask:
+            logger.info("Skipping noisy pixels check.")
+            chip.unmask_all()
+            chip["CONF_SR"].write()
+        else:
+            logger.info("Checking noisy pixels...")
+            noisy_pixels, n_disabled_pixels, mask = chip.auto_mask()
+            if len(noisy_pixels) > MAX_NOISY_PIXELS:
+                logger.critical("Too many noisy pixels (%d), aborting", len(noisy_pixels))
+                raise RuntimeError("Too many noisy pixels")
+            logger.info("Masking done, checking residual occupancy...")
+            pix_tmp, cnt = chip.get_occupancy(0.2)
+            if cnt.sum() > MAX_RESIDUAL_OCCUPANCY:
+                logger.critical("Too high residual occupancy after masking (%d hits), aborting", cnt.sum())
+                raise RuntimeError("Too high residual occupancy")
+            logger.info("Noisy pixels check done")
+            time.sleep(1)
 
         # Setup injection and test it on one pixel
         logger.info("Setting up injection...")
@@ -142,26 +149,26 @@ if __name__ == "__main__":
         chip['inj'].set_repeat(REPEAT)
         chip['inj'].set_phase(0)
         chip['inj'].set_en(0)
-        logger.info("Testing injection on pixel (%d,%d)", COL_TO_INJECT, ROW_TO_INJECT)
-        chip.select_injection(COL_TO_INJECT, ROW_TO_INJECT)
-        chip['data_rx'].set_en(False)
-        chip.set_monoread()
-        for _ in range(5):
-            chip['fifo'].reset()
-            time.sleep(0.002)
-        chip["inj"].start()
-        while not chip['inj'].is_ready:
-            time.sleep(0.001)
-        time.sleep(0.2)
-        ix = chip.interpret_data(chip['fifo'].get_data())
-        mask = (ix["col"] == COL_TO_INJECT) & (ix["row"] == ROW_TO_INJECT)
-        if abs(len(ix[mask]) - REPEAT) > MAX_DELTA_CNT:
-            logger.critical("Hits on injected pixel (%d) too different from number of injection pulses (%d), aborting", len(ix[mask]), REPEAT)
-            raise RuntimeError("Incorrect number of hits on injected pixel")
-        if len(ix) - len(ix[mask]) > MAX_RESIDUAL_OCCUPANCY:
-            logger.critical("Too high occupancy on non-injected pixels (%d hits), aborting", len(ix) - len(ix[mask]))
-            raise RuntimeError("Too high occupancy on non-injected pixels")
-        logger.info("Injection check done")
+        # logger.info("Testing injection on pixel (%d,%d)", COL_TO_INJECT, ROW_TO_INJECT)
+        # chip.select_injection(COL_TO_INJECT, ROW_TO_INJECT)
+        # chip['data_rx'].set_en(False)
+        # chip.set_monoread()
+        # for _ in range(5):
+            # chip['fifo'].reset()
+            # time.sleep(0.002)
+        # chip["inj"].start()
+        # while not chip['inj'].is_ready:
+            # time.sleep(0.001)
+        # time.sleep(0.2)
+        # ix = chip.interpret_data(chip['fifo'].get_data())
+        # mask = (ix["col"] == COL_TO_INJECT) & (ix["row"] == ROW_TO_INJECT)
+        # if abs(len(ix[mask]) - REPEAT) > MAX_DELTA_CNT:
+            # logger.critical("Hits on injected pixel (%d) too different from number of injection pulses (%d), aborting", len(ix[mask]), REPEAT)
+            # raise RuntimeError("Incorrect number of hits on injected pixel")
+        # if len(ix) - len(ix[mask]) > MAX_RESIDUAL_OCCUPANCY:
+            # logger.critical("Too high occupancy on non-injected pixels (%d hits), aborting", len(ix) - len(ix[mask]))
+            # raise RuntimeError("Too high occupancy on non-injected pixels")
+        # logger.info("Injection check done")
         time.sleep(1)
 
         logger.info("Launching the scan...")

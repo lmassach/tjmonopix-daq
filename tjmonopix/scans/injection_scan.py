@@ -150,7 +150,7 @@ class InjectionScan(scan_base.ScanBase):
                         self.dut['CONF_SR']['MASKV'].setall(False)
                         self.dut['CONF_SR']['MASKH'].setall(False)
                         self.dut['CONF_SR']['MASKD'].setall(False)
-                        self.dut['CONF_SR']['MASKH'][row] = True
+                        self.dut['CONF_SR']['MASKH'][row] = bitarray.bitarray('1')
                         #print("row", row)
                         
                         

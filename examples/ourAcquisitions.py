@@ -15,12 +15,20 @@ import yaml
 from tjmonopix.tjmonopix import TJMonoPix, FakeTJMonoPix
 
 # Analog front-end default values
-VRESET_DAC = 35
+#Tutte le misure HV flavor fino al 13 marzo avevano i settaggi:
+#VRESET_DAC = 35
+#ICASN_DAC = 0
+#IRESET_DAC = 2
+#ITHR_DAC = 5
+#IDB_DAC = 60
+#IBIAS_DAC = 100
+
+VRESET_DAC = 43 #35 in default conf #suggested 43 in N_gap
 ICASN_DAC = 0
 IRESET_DAC = 2
-ITHR_DAC = 5
+ITHR_DAC = 10 #5 dac in default conf. in N_gapW4R2 ith = 10 dac for both pmos and hv flavor
 IDB_DAC = 50
-IBIAS_DAC = 100
+IBIAS_DAC = 45#20 suggested for HV in script N_gapW4R2, 45dac suggested for Pmos flavor
 
 # Masks, found during a IDB=60 scan with no source or injection with auto_mask @ 2 hits / 0.2 s
 MASKD = bitarray('1011111111111111111000100111111110010111111111110001101101110111111001010010111010010111001101111110110011011110111010110100010110001001110010011000010101100010000010100011001100100100011110010010000010010001011111000000000101000100011000110100111001110100010110010101110110111101001010111111011111101101111111111101011110101111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111')
@@ -63,7 +71,8 @@ if __name__ == "__main__":
     # Init chip (with power reset => power-cycle it)
     print("Initializing chip...")
     chip = TJMonoPix(conf="../tjmonopix/tjmonopix_mio3.yaml", no_power_reset=False)
-    chip.init(fl="EN_HV")
+    #chip.init(fl="EN_HV")
+    chip.init(fl="EN_PMOS")
     chip['data_rx'].CONF_START_FREEZE = 64  # default 3
     chip['data_rx'].CONF_STOP_FREEZE = 100  # default 40
     chip['data_rx'].CONF_START_READ = 66  # default 6
@@ -85,6 +94,7 @@ if __name__ == "__main__":
     chip.set_ithr_dacunits(ITHR_DAC, 1)
     chip.set_idb_dacunits(args.idb, 1)
     chip.set_ibias_dacunits(IBIAS_DAC, 1)
+    chip.set_icasn_dacunits(ICASN_DAC, 1)
     chip.write_conf()
     print("Analog front-end setup done")
     time.sleep(1)
@@ -92,7 +102,7 @@ if __name__ == "__main__":
     # Run automask to check if the chip is behaving (default args are OK)
     if args.mask_cols is None:
         print("Masking noisy pixels...")
-        chip.standard_auto_mask()
+        chip.standard_auto_mask(th3=2)
         print("Masking done")
         time.sleep(1)
     elif len(args.mask_cols) == 0:
@@ -147,73 +157,80 @@ if __name__ == "__main__":
         print("%s BEGINNING ACQUISITION" % start_time.isoformat())
         wanted_end_time = start_time + datetime.timedelta(seconds=args.seconds)
         all_data, images, colorbars = None, [None, None, None, None], [None, None]
-        while datetime.datetime.now() < wanted_end_time:
-            # Sleep for args.interval seconds, or until the end of the acquisition (whichever comes first)
-            sleep_time = min(args.interval, (wanted_end_time - datetime.datetime.now()).total_seconds())
-            if args.show:
-                plt.pause(sleep_time)  # While waiting, update the plot window
-            else:
-                time.sleep(sleep_time)
-            # Retrieve the hits acquired until now
-            end_time = datetime.datetime.now()
-            hits = chip.interpret_data(chip['fifo'].get_data())
-             
-            # Write the hits to the h5 file
-            hit_table.append(hits)
-            hit_table.flush()  # Write to file immediately, so data is on disk
-            print("Received %d hits" % len(hits))
-            if args.show and len(hits) != 0:
-                # Update the plot
-                data, x, y = np.histogram2d(hits["col"], hits["row"], bins=[112,224],
-                                            range=[[0,112],[0,224]])
+        try:
+            while datetime.datetime.now() < wanted_end_time:
+                # Sleep for args.interval seconds, or until the end of the acquisition (whichever comes first)
+                sleep_time = min(args.interval, (wanted_end_time - datetime.datetime.now()).total_seconds())
+                if args.show:
+                    plt.pause(sleep_time)  # While waiting, update the plot window
+                else:
+                    time.sleep(sleep_time)
+                # Retrieve the hits acquired until now
+                end_time = datetime.datetime.now()
+                hits = chip.interpret_data(chip['fifo'].get_data())
+                 
+                # Write the hits to the h5 file
+                hit_table.append(hits)
+                hit_table.flush()  # Write to file immediately, so data is on disk
+                print("Received %d hits" % len(hits))
+                if args.show and len(hits) != 0:
+                    # Update the plot
+                    data, x, y = np.histogram2d(hits["col"], hits["row"], bins=[112,224],
+                                                range=[[0,112],[0,224]])
 
-                tot = (hits["te"]- hits["le"])%0x3F 
-                """
-                selected_col_pixel = 0
-                selected_row_pixel = 249
-                mask = (hits["col"] == selected_col_pixel) & (hits["row"] == selected_row_pixel) #questa maschera non funziona: la lunghezza di tot[mask] è zero.
-                """
-                if all_data is None:
-                    all_data = data
-                    all_tot = tot
-                    all_tot_single_pixel = tot[mask]                                       
-                    #all_data += 0.1
-                else:
-                    all_data += data
-                    all_tot = np.concatenate((all_tot, tot))
-                    all_tot_single_pixel = np.concatenate((all_tot_single_pixel, tot[mask]))
-                    print("len(all_tot_single_pixel)", len(tot[mask]))
+                    tot = (hits["te"]- hits["le"])&0x3F 
                     
-                if images[0] is None:
-                    #legend_colormap = '%d hits' % (len(tot))
-                    images[0] = axs[0].imshow(all_data.transpose(), origin='lower', norm=LogNorm())
-                    colorbars[0] = plt.colorbar(images[0], ax=axs[0])
-                    images[1] = axs[1].imshow(all_data.transpose(), origin='lower')
-                    colorbars[1] = plt.colorbar(images[1], ax=axs[1])
-                    images[2] = axs[2].hist(all_tot, bins = 61, range = (0, 60))
-                    #images[2].axs[2].set_yscale("log")
+                    selected_col_pixel = 4
+                    selected_row_pixel = 50
+                    # mask = (hits["col"] == selected_col_pixel) & (hits["row"] == selected_row_pixel) 
+                    mask = (hits["col"] == selected_col_pixel) & (hits["row"] == selected_row_pixel)
                     
-                    
-                
-                    """
-                    legend_tot = 'col, row: %d %d' % (selected_col_pixel, selected_row_pixel)
-                    images[3] = axs[3].hist(all_tot_single_pixel, bins = 61, range = (0, 60))
-                    """
-                else:
-                    # Set the ticks of the colorbar to round numbers
-                    top = max(1, all_data.max())
-                    o = floor(log10(top))
-                    t = max(1, floor(top / 10**o))
-                    images[0].set_data(all_data.transpose())
-                    colorbars[0].set_clim(vmin=0.1, vmax=top)
-                    colorbars[0].set_ticks(np.logspace(-1, o+1, num=o+3, endpoint=True))
-                    colorbars[0].draw_all()
-                    images[1].set_data(all_data.transpose())
-                    colorbars[1].set_clim(vmin=0, vmax=top)
-                    colorbars[1].set_ticks(np.linspace(0, t * 10**o, num=t+1, endpoint=True))
-                    colorbars[1].draw_all()
-                    
+                    if all_data is None:
+                        all_data = data
+                        all_tot = tot
+                        all_tot_single_pixel = tot[mask]                                       
+                        #all_data += 0.1
+                    else:
+                        all_data += data
+                        all_tot = np.concatenate((all_tot, tot))
+                        all_tot_single_pixel = np.concatenate((all_tot_single_pixel, tot[mask]))
+                        
+                    if images[0] is None:
+                        #legend_colormap = '%d hits' % (len(tot))
+                        images[0] = axs[0].imshow(all_data.transpose(), origin='lower', norm=LogNorm())
+                        colorbars[0] = plt.colorbar(images[0], ax=axs[0])
+                        images[1] = axs[1].imshow(all_data.transpose(), origin='lower')
+                        colorbars[1] = plt.colorbar(images[1], ax=axs[1])
+                        images[2] = axs[2].hist(all_tot, bins = 64, range = (0, 64))          
+                        legend_tot = 'col, row: %d %d' % (selected_col_pixel, selected_row_pixel)
+                        images[3] = axs[3].hist(all_tot_single_pixel, bins = 64, range = (0, 64))
+                        
+                    else:
+                        # Set the ticks of the colorbar to round numbers
+                        top = max(1, all_data.max())
+                        o = floor(log10(top))
+                        t = max(1, floor(top / 10**o))
+                        images[0].set_data(all_data.transpose())
+                        colorbars[0].set_clim(vmin=0.1, vmax=top)
+                        colorbars[0].set_ticks(np.logspace(-1, o+1, num=o+3, endpoint=True))
+                        colorbars[0].draw_all()
+                        images[1].set_data(all_data.transpose())
+                        colorbars[1].set_clim(vmin=0, vmax=top)
+                        colorbars[1].set_ticks(np.linspace(0, t * 10**o, num=t+1, endpoint=True))
+                        colorbars[1].draw_all()
+                        axs[2].clear()
+                        axs[2].hist(all_tot, bins = 64, range = (0, 64))
+                        axs[2].set_yscale("log")
+                        axs[3].clear()
+                        axs[3].hist(all_tot_single_pixel, bins = 64, range = (0, 64))                    
+                        axs[3].set_yscale("log")
+        except KeyboardInterrupt:
+            pass
+
+
         hit_table.attrs.end_time = end_time.isoformat()
+        
+
         hit_table.attrs.duration = (end_time - start_time).total_seconds()
         print("%s ACQUISITION END" % end_time.isoformat())
         print("ACTUAL DURATION %s" % (end_time - start_time))
