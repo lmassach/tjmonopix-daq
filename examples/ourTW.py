@@ -10,16 +10,27 @@ import numpy as np
 from tjmonopix.tjmonopix import TJMonoPix
 from tjmonopix.scans.injection_scan import InjectionScan
 
-# Analog front-end
+# # Analog front-end (for HV)
+# VL_DAC = 40
+# VH_DAC = 80
+# VRESET_DAC = 35
+# ICASN_DAC = 0
+# IRESET_DAC = 2
+# ITHR_DAC = 5
+# IDB_DAC = 50
+# IBIAS_DAC = 100
+# CALCAP = 33  # For HV-flavored pixels
+
+# For PMOS
 VL_DAC = 40
 VH_DAC = 80
-VRESET_DAC = 35
+VRESET_DAC = 43 #35 in default conf #suggested 43 in N_gap
 ICASN_DAC = 0
 IRESET_DAC = 2
-ITHR_DAC = 5
+ITHR_DAC = 10 #5 dac in default conf. in N_gapW4R2 ith = 10 dac for both pmos and hv flavor
 IDB_DAC = 50
-IBIAS_DAC = 100
-CALCAP = 33  # For HV-flavored pixels
+IBIAS_DAC = 45#20 suggested for HV in script N_gapW4R2, 45dac suggested for Pmos flavor
+CALCAP = 20
 
 # Injected pulse
 DELAY = 800  # In clock units (640 MHz)
@@ -93,7 +104,7 @@ if __name__ == "__main__":
         # Init chip (with power reset, we want a power-cycle to avoid issues)
         logger.info("Initializing chip...")
         chip = TJMonoPix(conf="../tjmonopix/tjmonopix_mio3.yaml", no_power_reset=False)
-        chip.init(fl="EN_HV")
+        chip.init(fl="EN_PMOS")
         chip['data_rx'].CONF_START_FREEZE = 64 #default 3
         chip['data_rx'].CONF_STOP_FREEZE = 100 #default 40
         chip['data_rx'].CONF_START_READ = 66 #default 6

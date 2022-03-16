@@ -124,6 +124,7 @@ ENV/
 
 # Output data
 */output_data/*
+*.png
 
 # pyDev project files
 .project
