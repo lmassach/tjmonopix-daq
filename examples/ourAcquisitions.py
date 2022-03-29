@@ -37,8 +37,9 @@ IBIAS_DAC = 45  # 20 suggested for HV in script N_gapW4R2, 45 suggested for Pmos
 OUTPUT_FILE = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S_acq.h5")
 
 # Hit data type
-HIT_DTYPE = np.dtype(
-    [("col", "<u1"), ("row", "<u2"), ("le", "<u1"), ("te", "<u1"), ("noise", "<u1")])
+HIT_DTYPE = np.dtype([
+    ("col", "<u1"), ("row", "<u2"), ("le", "<u1"), ("te", "<u1"),
+    ("noise", "<u1"), ("timestamp", "<u8")])
 
 
 if __name__ == "__main__":
@@ -173,7 +174,7 @@ if __name__ == "__main__":
                     time.sleep(sleep_time)
                 # Retrieve the hits acquired until now
                 end_time = datetime.datetime.now()
-                hits = chip.interpret_data(chip['fifo'].get_data())
+                hits = chip.interpret_data_timestamp(chip['fifo'].get_data())
 
                 # Write the hits to the h5 file
                 hit_table.append(hits)

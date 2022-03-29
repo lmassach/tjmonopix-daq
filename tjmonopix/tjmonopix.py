@@ -311,6 +311,44 @@ class TJMonoPix(Dut):
         ret['noise'] = (hit_data & 0x8000000) >> 27
         return ret
 
+    def interpret_data_timestamp(self, raw_data):
+        hit_dtype = np.dtype([
+            ("col", "<u1"), ("row", "<u2"), ("le", "<u1"), ("te", "<u1"),
+            ("noise", "<u1"), ("timestamp", "<u8")])
+        hit_data_sel = ((raw_data & 0xF0000000) < 0x30000000)
+        hit_data = raw_data[hit_data_sel]
+        l = len(hit_data)
+        errors = (hit_data & 0xF0000000) != ((np.arange(len(hit_data), dtype=np.int32) % 3) << 28)
+        while np.any(errors):
+            i = np.argwhere(errors)[0]
+            if i%3 == 0:
+                to_delete = [i]
+            elif i%3 == 1:
+                to_delete = [i-1]
+                if hit_data[i] & 0xF0000000 == 0x20000000:
+                    to_delete.append(i)
+            else:
+                to_delete = [i-1, i-2]
+                if hit_data[i] & 0xF0000000 == 0x10000000:
+                    to_delete.append(i)
+            hit_data = np.delete(hit_data, to_delete)
+            errors = (hit_data & 0xF0000000) != ((np.arange(len(hit_data), dtype=np.int32) % 3) << 28)
+        if len(hit_data) % 3 != 0:
+            hit_data = hit_data[:-(len(hit_data)%3)]
+        if len(hit_data) != l:
+            print("WARNING Discarded %d raw words (invalid hit data)" % (l-len(hit_data)))
+
+        res = np.empty(len(hit_data)//3, hit_dtype)
+        res['col'] = ((hit_data[::3] & 0x3F) << 1) | ((hit_data[::3] & 0x4000) >> 14)
+        res['row'] = (hit_data[::3] & 0x3FC0) >> 6
+        res['te'] = (hit_data[::3] & 0x1F8000) >> 15
+        res['le'] = (hit_data[::3] & 0x7E00000) >> 21
+        res['noise'] = (hit_data[::3] & 0x8000000) >> 27
+        res['timestamp'] = (
+            ((hit_data[1::3].astype(np.uint64) << 4) & np.uint64(0x00000000FFFFFFF0))
+            | ((hit_data[2::3].astype(np.uint64) << 32) & np.uint64(0x00FFFFFF00000000)))
+        return res
+
     def mask(self, flavor, col, row):
         assert 0 <= flavor <= 3, 'Flavor must be between 0 and 3'
         assert 0 <= col <= 111, 'Column must be between 0 and 111'
@@ -853,7 +891,7 @@ class TJMonoPix(Dut):
 
     def auto_mask(self, th=2, step=50, dt=0.2, already_masked=set()):
         """Automatically finds and masks noisy pixels.
-        
+
         `th`: masks the pixels that receive >= this number of hits in `dt`
         `dt`: the time to wait for hits in seconds
         `step`: unmask this number of rows/columns/diagonals at a time
@@ -1070,17 +1108,22 @@ class FakeTJMonoPix(TJMonoPix):
             self["all"] = int(value)
 
         def get_data(self):
+            # Make up some data
             n = int(min(1000000, 1000 * (time.time() - self.last_reset)))
             self.last_reset = time.time()
             col = np.random.randint(112, size=n)
             row = np.random.randint(224, size=n)
             le = np.random.randint(64, size=n)
             te = np.random.randint(64, size=n)
-            res = np.zeros((n,), FakeTJMonoPix.HIT_DTYPE)
-            res["col"] = col
-            res["row"] = row
-            res["le"] = le
-            res["te"] = te
+            timestamp = int(time.time()) + np.arange(n, dtype=np.uint64)
+            res = np.empty(3*n, np.int32)
+            res[::3] = (col >> 1) | ((col & 1) << 14) | (row << 6) | (te << 15) | (le << 21)
+            res[1::3] = 0x10000000 | (timestamp & 0xFFFFFFF)
+            res[2::3] = 0x20000000 | ((timestamp & 0xFFFFFF0000000) >> 28)
+            # Flip some bits randomly to simulate readout errors
+            for b in [28, 29]:
+                i = np.random.randint(3*n, size=3*n//1000)
+                res[i] ^= (1<<b)
             return res
 
         @property
@@ -1130,8 +1173,6 @@ class FakeTJMonoPix(TJMonoPix):
             else:
                 super(FakeTJMonoPix.ConfDict, self).__setitem__(key, value)
 
-    HIT_DTYPE = np.dtype([("col", "<u1"), ("row", "<u2"), ("le", "<u1"), ("te", "<u1"), ("noise", "<u1")])
-
     def __init__(self, conf=None, no_power_reset=False):
         # No call to super().__init__ !
         self.SET = {'VDDA': None, 'VDDP': None, 'VDDA_DAC': None, 'VDDD': None,
@@ -1178,11 +1219,6 @@ class FakeTJMonoPix(TJMonoPix):
         res = dict(self._conf)
         res.update(self._registers)
         return res
-
-    def interpret_data(self, raw_data):
-        if raw_data.dtype == FakeTJMonoPix.HIT_DTYPE:
-            return raw_data
-        return super(FakeTJMonoPix, self).interpret_data(raw_data)
 
     def __getitem__(self, key):
         return self._registers[key]
