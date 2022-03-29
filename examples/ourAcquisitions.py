@@ -56,9 +56,9 @@ if __name__ == "__main__":
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--no-mask", action="store_true",
                         help="Skip automask, do not mask any pixel.")
-    group.add_argument("--mask-cols", nargs="+", type=int, default=None,
+    group.add_argument("--mask-cols", nargs="+", type=int, default=None, metavar="COL",
                        help="Skip automask, mask the given columns.")
-    group.add_argument("--mask-col-range", nargs=2, type=int, default=None, metavar=("FIRST LAST"),
+    group.add_argument("--mask-col-range", nargs=2, type=int, default=None, metavar=("FIRST", "LAST"),
                        help="Skip automask, mask columns from FIRST to LAST (included).")
     parser.add_argument("-i", "--interval", type=float, default=2,
                         help="The time between two successive data reads in seconds.")
