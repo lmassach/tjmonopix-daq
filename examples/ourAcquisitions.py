@@ -4,8 +4,10 @@ import argparse
 import datetime
 from math import floor, log10
 import os
+import signal
 import sys
 import time
+import traceback
 from bitarray import bitarray
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
@@ -15,25 +17,21 @@ import yaml
 from tjmonopix.tjmonopix import TJMonoPix, FakeTJMonoPix
 
 # Analog front-end default values
-#Tutte le misure HV flavor fino al 13 marzo avevano i settaggi:
-#VRESET_DAC = 35
-#ICASN_DAC = 0
-#IRESET_DAC = 2
-#ITHR_DAC = 5
-#IDB_DAC = 60
-#IBIAS_DAC = 100
+# Tutte le misure HV flavor fino al 13 marzo avevano i settaggi:
+# VRESET_DAC = 35
+# ICASN_DAC = 0
+# IRESET_DAC = 2
+# ITHR_DAC = 5
+# IDB_DAC = 60
+# IBIAS_DAC = 100
 
-VRESET_DAC = 43 #35 in default conf #suggested 43 in N_gap
+# Dopo il 13 marzo, con il flavor PMOS, usiamo questi settings
+VRESET_DAC = 43  # 35 in default conf, suggested 43 in N_gap
 ICASN_DAC = 0
 IRESET_DAC = 2
-ITHR_DAC = 10 #5 dac in default conf. in N_gapW4R2 ith = 10 dac for both pmos and hv flavor
+ITHR_DAC = 10  # 5 in default conf, in N_gapW4R2 ith = 10 for both pmos and hv flavor
 IDB_DAC = 50
-IBIAS_DAC = 45#20 suggested for HV in script N_gapW4R2, 45dac suggested for Pmos flavor
-
-# Masks, found during a IDB=60 scan with no source or injection with auto_mask @ 2 hits / 0.2 s
-MASKD = bitarray('1011111111111111111000100111111110010111111111110001101101110111111001010010111010010111001101111110110011011110111010110100010110001001110010011000010101100010000010100011001100100100011110010010000010010001011111000000000101000100011000110100111001110100010110010101110110111101001010111111011111101101111111111101011110101111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111')
-MASKH = bitarray('10010111100000100010110110001001010101010101100011010000000001000100011001100010110000011101101000000000100010111110101001000011011000111100000000110110010010000110100111010101011011010100011010000111001101000001111010111000')
-MASKV = bitarray('0000100010000010001110100001000000000000000101000100000000000000000000111100111011110101001100000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000')
+IBIAS_DAC = 45  # 20 suggested for HV in script N_gapW4R2, 45 suggested for Pmos flavor
 
 # Default output file
 OUTPUT_FILE = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S_acq.h5")
@@ -55,8 +53,13 @@ if __name__ == "__main__":
                         help="The threshold (IDB) value (in DAC)")
     parser.add_argument("--show", action="store_true",
                         help="Shows a plot in realtime.")
-    parser.add_argument("--mask-cols", nargs="*", type=int, default=None,
-                        help="Skip automask, mask this range of columns.")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--no-mask", action="store_true",
+                        help="Skip automask, do not mask any pixel.")
+    group.add_argument("--mask-cols", nargs="+", type=int, default=None,
+                       help="Skip automask, mask the given columns.")
+    group.add_argument("--mask-col-range", nargs=2, type=int, default=None, metavar=("FIRST LAST"),
+                       help="Skip automask, mask columns from FIRST to LAST (included).")
     parser.add_argument("-i", "--interval", type=float, default=2,
                         help="The time between two successive data reads in seconds.")
     parser.add_argument("--test", action="store_true",
@@ -100,37 +103,31 @@ if __name__ == "__main__":
     time.sleep(1)
 
     # Run automask to check if the chip is behaving (default args are OK)
-    if args.mask_cols is None:
-        print("Masking noisy pixels...")
-        chip.standard_auto_mask(th3=2)
-        print("Masking done")
-        time.sleep(1)
-    elif len(args.mask_cols) == 0:
+    if args.no_mask:
+        print("Unmasking all pixels.")
         chip.unmask_all()
-    else:
+    elif args.mask_cols or args.mask_col_range:
         chip['CONF_SR'][chip.SET['fl']].setall(False)
         chip['CONF_SR']['EN_OUT'][chip.fl_n] = False
         chip['CONF_SR']['MASKD'].setall(False)
         chip['CONF_SR']['MASKH'].setall(False)
         chip['CONF_SR']['MASKV'].setall(True)
-        if len(args.mask_cols) == 2:
-            cols = range(args.mask_cols[0], args.mask_cols[1]+1)
+        if args.mask_col_range:
+            cols = range(args.mask_col_range[0], args.mask_col_range[1]+1)
+            print("Masking columns from %d to %d (included)" % (args.mask_col_range[0], args.mask_col_range[1]))
         else:
             cols = args.mask_cols
+            print("Masking columns %s" % cols)
         for col in cols:
             chip['CONF_SR']['MASKV'][chip.fl_n*112+col] = False
         chip.write_conf()
         chip['CONF_SR'][chip.SET['fl']].setall(True)
         chip.write_conf()
-    # chip['CONF_SR'][chip.SET['fl']].setall(False)
-    # chip['CONF_SR']['EN_OUT'][chip.fl_n] = False
-    # chip['CONF_SR']['MASKD'] = MASKD
-    # chip['CONF_SR']['MASKV'] = MASKV
-    # chip['CONF_SR']['MASKH'] = MASKH
-    # chip.write_conf()
-    # time.sleep(1)
-    # chip['CONF_SR'][chip.SET['fl']].setall(True)
-    # chip.write_conf()
+    else:
+        print("Masking noisy pixels (automask)...")
+        chip.standard_auto_mask()
+        print("Masking done")
+    time.sleep(1)
 
     # Do the actual acquisition
     print("Opening output file")
@@ -157,8 +154,17 @@ if __name__ == "__main__":
         print("%s BEGINNING ACQUISITION" % start_time.isoformat())
         wanted_end_time = start_time + datetime.timedelta(seconds=args.seconds)
         all_data, images, colorbars = None, [None, None, None, None], [None, None]
+        # Configure Python to not crash when it receives CTRL+C
+        CTRL_C_RECEIVED = False
+        def handle_ctrl_c(sn, f):
+            global CTRL_C_RECEIVED
+            CTRL_C_RECEIVED = True
+        signal.signal(signal.SIGINT, handle_ctrl_c)
+        # Main receive-save-show loop
         try:
             while datetime.datetime.now() < wanted_end_time:
+                if CTRL_C_RECEIVED:
+                    break
                 # Sleep for args.interval seconds, or until the end of the acquisition (whichever comes first)
                 sleep_time = min(args.interval, (wanted_end_time - datetime.datetime.now()).total_seconds())
                 if args.show:
@@ -168,7 +174,7 @@ if __name__ == "__main__":
                 # Retrieve the hits acquired until now
                 end_time = datetime.datetime.now()
                 hits = chip.interpret_data(chip['fifo'].get_data())
-                 
+
                 # Write the hits to the h5 file
                 hit_table.append(hits)
                 hit_table.flush()  # Write to file immediately, so data is on disk
@@ -178,33 +184,32 @@ if __name__ == "__main__":
                     data, x, y = np.histogram2d(hits["col"], hits["row"], bins=[112,224],
                                                 range=[[0,112],[0,224]])
 
-                    tot = (hits["te"]- hits["le"])&0x3F 
-                    
+                    tot = (hits["te"]- hits["le"])&0x3F
+
                     selected_col_pixel = 4
                     selected_row_pixel = 50
-                    # mask = (hits["col"] == selected_col_pixel) & (hits["row"] == selected_row_pixel) 
+                    # mask = (hits["col"] == selected_col_pixel) & (hits["row"] == selected_row_pixel)
                     mask = (hits["col"] == selected_col_pixel) & (hits["row"] == selected_row_pixel)
-                    
+
                     if all_data is None:
                         all_data = data
                         all_tot = tot
-                        all_tot_single_pixel = tot[mask]                                       
+                        all_tot_single_pixel = tot[mask]
                         #all_data += 0.1
                     else:
                         all_data += data
                         all_tot = np.concatenate((all_tot, tot))
                         all_tot_single_pixel = np.concatenate((all_tot_single_pixel, tot[mask]))
-                        
+
                     if images[0] is None:
                         #legend_colormap = '%d hits' % (len(tot))
                         images[0] = axs[0].imshow(all_data.transpose(), origin='lower', norm=LogNorm())
                         colorbars[0] = plt.colorbar(images[0], ax=axs[0])
                         images[1] = axs[1].imshow(all_data.transpose(), origin='lower')
                         colorbars[1] = plt.colorbar(images[1], ax=axs[1])
-                        images[2] = axs[2].hist(all_tot, bins = 64, range = (0, 64))          
+                        images[2] = axs[2].hist(all_tot, bins = 64, range = (0, 64))
                         legend_tot = 'col, row: %d %d' % (selected_col_pixel, selected_row_pixel)
                         images[3] = axs[3].hist(all_tot_single_pixel, bins = 64, range = (0, 64))
-                        
                     else:
                         # Set the ticks of the colorbar to round numbers
                         top = max(1, all_data.max())
@@ -222,15 +227,16 @@ if __name__ == "__main__":
                         axs[2].hist(all_tot, bins = 64, range = (0, 64))
                         axs[2].set_yscale("log")
                         axs[3].clear()
-                        axs[3].hist(all_tot_single_pixel, bins = 64, range = (0, 64))                    
+                        axs[3].hist(all_tot_single_pixel, bins = 64, range = (0, 64))
                         axs[3].set_yscale("log")
+        except Exception:
+            print(traceback.format_exc())
         except KeyboardInterrupt:
-            pass
-
+            print(traceback.format_exc())
+        # Configure Python to crash on CTRL+C again
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
 
         hit_table.attrs.end_time = end_time.isoformat()
-        
-
         hit_table.attrs.duration = (end_time - start_time).total_seconds()
         print("%s ACQUISITION END" % end_time.isoformat())
         print("ACTUAL DURATION %s" % (end_time - start_time))
