@@ -163,10 +163,12 @@ if __name__ == "__main__":
         signal.signal(signal.SIGINT, handle_ctrl_c)
         # Main receive-save-show loop
         try:
+            end_time = datetime.datetime.now()
             while datetime.datetime.now() < wanted_end_time:
                 if CTRL_C_RECEIVED:
                     break
                 # Sleep for args.interval seconds, or until the end of the acquisition (whichever comes first)
+                prev_time = end_time
                 sleep_time = min(args.interval, (wanted_end_time - datetime.datetime.now()).total_seconds())
                 if args.show:
                     plt.pause(sleep_time)  # While waiting, update the plot window
@@ -174,12 +176,13 @@ if __name__ == "__main__":
                     time.sleep(sleep_time)
                 # Retrieve the hits acquired until now
                 end_time = datetime.datetime.now()
+                delta_t = (end_time - prev_time).total_seconds()
                 hits = chip.interpret_data_timestamp(chip['fifo'].get_data())
 
                 # Write the hits to the h5 file
                 hit_table.append(hits)
                 hit_table.flush()  # Write to file immediately, so data is on disk
-                print("Received %d hits" % len(hits))
+                print("Received %d hits in %.2f s (%.1f hits/s)" % (len(hits), delta_t, float(len(hits)) / delta_t))
                 if args.show and len(hits) != 0:
                     # Update the plot
                     data, x, y = np.histogram2d(hits["col"], hits["row"], bins=[112,224],
