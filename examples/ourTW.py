@@ -23,7 +23,7 @@ from tjmonopix.scans.injection_scan import InjectionScan
 
 # For PMOS
 VL_DAC = 40
-VH_DAC = 80
+VH_DAC = 100
 VRESET_DAC = 43 #35 in default conf #suggested 43 in N_gap
 ICASN_DAC = 0
 IRESET_DAC = 2
@@ -32,9 +32,10 @@ IDB_DAC = 50
 IBIAS_DAC = 45#20 suggested for HV in script N_gapW4R2, 45dac suggested for Pmos flavor
 CALCAP = 20
 
+
 # Injected pulse
-DELAY = 800  # In clock units (640 MHz)
-WIDTH = 250
+DELAY = 800  # In clock units (40 MHz)
+WIDTH = 70
 REPEAT = 100  # Number of pulses injected
 
 # Limits for checking that the chip is behaving
@@ -77,7 +78,7 @@ if __name__ == "__main__":
                         help="The injection range or value.")
     parser.add_argument("-t", "--thrs", required=True, nargs="+", type=int,
                         help="The threshold range or value.")
-    parser.add_argument("-n", "--n-cols", type=int, default=5,
+    parser.add_argument("-n", "--n-cols", type=int, default=10,
                         help="Number of columns to scan at a time.")
     parser.add_argument("--no-mask", action="store_true",
                         help="Skip mask/noisy pixels check.")
