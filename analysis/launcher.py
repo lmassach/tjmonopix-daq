@@ -1,3 +1,4 @@
+#python3 launcher.py -f 20220622_154229 -i 100 -c 25 -r 25
 import argparse
 import os
 import glob
@@ -14,10 +15,11 @@ options_parser.add_argument('-row_selected', '-r', default=None, type=int, help=
 options = vars(options_parser.parse_args())
 input_inj_file_data = options['input_inj_file_data']
 injection_max = options['injection_max']
-col_sel = options['col_selected']
+col_selected = options['col_selected']
 row_selected = options['row_selected']
 
 start_time = time.time()
+
 print("     RUNNING scurve_tot_histo.py,  %s SECONDS " % (time.time() - start_time))
 cmd = 'python3 scurve_tot_histo.py -f %s -i 1 %d' % (input_inj_file_data, injection_max)
 subprocess.run(cmd, shell = True)

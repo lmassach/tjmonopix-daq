@@ -32,13 +32,13 @@ if __name__ == '__main__' :
 
     param = [0.833, -43]
 
-    input_file = glob.glob(input_file_data + '*ev.h5') 
+    input_file = glob.glob(input_file_data + '*ev.h5') [0]
     print("Reading files %s ... %s" % (input_file, time.time() - start_time))
     fev = tb.open_file(input_file, "r")
-    col = col.append(fev.root.Hits.col("col"))
-    row = row.append(fev.root.Hits.col("row"))
-    inj = inj.append(fev.root.Hits.col("inj"))
-    tot = tot.append(fev.root.Hits.col("tot"))
+    col = fev.root.Hits.col("col")
+    row = fev.root.Hits.col("row")
+    inj = fev.root.Hits.col("inj")
+    tot = fev.root.Hits.col("tot")
     threshold = np.unique(fev.root.Hits.col("th"))
 
     print("Creating output file ...   %s seconds " % (time.time() - start_time))
