@@ -37,8 +37,8 @@ Then run `python setup.py develop` from root folder.
        ```
     2. pixel_clusterizer: <https://github.com/Silab-Bonn/pixel_clusterizer>
        ```
-       git clone https://github.com/Silab-Bonn/pixle_clusterizer
-       cd pixle_clusterizer
+       git clone https://github.com/Silab-Bonn/pixel_clusterizer
+       cd pixel_clusterizer
        python setup.py develop
        ```
 
