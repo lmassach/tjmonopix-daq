@@ -14,10 +14,10 @@ PYTHON3_PATH = r'C:\Program Files\Python37\python.exe'
 PYTHON2_ACTIVATION_CMD = r'C:\Users\testuser\miniconda2\Scripts\activate.bat C:\Users\testuser\miniconda2'
 
 SCRIPT_DIR = os.path.dirname(__file__)
-ANA_SCRIPT = os.path.join(SCRIPT_DIR, "fake_ana.py")
-PLOT_SCRIPT = os.path.join(SCRIPT_DIR, "fake_plot.py")
+ANA_SCRIPT = os.path.join(SCRIPT_DIR, "ourTWanalysis.py")
+PLOT_SCRIPT = os.path.join(SCRIPT_DIR, r"analysis\launcher.py")
 SCAN_FILES = "output_data/*_scan.h5"  # Glob expression for input files
-SCAN_TO_ANA_FILES = (r'_scan\.h5$', r'_scan_hits.h5')  # re.sub args to convert input file name to output file name
+SCAN_TO_ANA_FILES = (r'_scan\.h5$', r'_ev.h5')  # re.sub args to convert input file name to output file name
 
 
 def escape_argument(arg):
@@ -54,8 +54,7 @@ def is_file_open(path):
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("-n", type=float, default=0,
-                    help="Repeat every N seconds.")
+parser.add_argument("-n", type=float, default=0, help="Repeat every N seconds.")
 args = parser.parse_args()
 
 while True:
@@ -73,7 +72,7 @@ while True:
             print(f"ERR Analysis failed, delete {ana_file} to retry")
             continue
         print(f"Plotting  {scan_file}")
-        if py3([PLOT_SCRIPT, ana_file]).returncode:
+        if py3([PLOT_SCRIPT, "-f", ana_file[:-len("_ev.h5")]]).returncode:
             print(f"ERR Plotting failed, delete {ana_file} to retry")
         
     if args.n > 0:
