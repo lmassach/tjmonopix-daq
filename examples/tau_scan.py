@@ -39,7 +39,7 @@ ROW_TO_INJECT = 10
 MAX_DELTA_CNT = 5
 
 
-OUTPUT_FILE = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S_tau_scan.h5")
+OUTPUT_FILE = datetime.datetime.now().strftime("output_data/dead_time_test/%Y-%m-%d_%H-%M-%S_tau_scan.h5")
 HIT_DTYPE = np.dtype([
     ("col", "<u1"), ("row", "<u2"), ("le", "<u1"), ("te", "<u1"),
     ("noise", "<u1"), ("timestamp", "<u8")])
@@ -169,28 +169,26 @@ if __name__ == "__main__":
                 global CTRL_C_RECEIVED
                 CTRL_C_RECEIVED = True
             signal.signal(signal.SIGINT, handle_ctrl_c)
-
+            chip.enable_data_rx()
             #logger.info("Testing random injection on pixels ")
-            for i in range(10):
+            for i in range(3):
+                #inj_low = chip.get_vl_dacunits()
+                #chip.set_vh_dacunits(inj_low+60)
                 if CTRL_C_RECEIVED:
                     break
                 #Set up the injection
-                print("col to inject, row to inject", col_to_inject, row_to_inject)
                 chip.enable_injection(1, col_to_inject[0], row_to_inject[0])
-                #chip.select_injection(col_to_inject, row_to_inject = None, flavor=1)
-                print("Preparing chip for acquisition")
-                chip.enable_data_rx()
+                #chip.select_injection(col_to_inject[0], row_to_inject = None, flavor=1)
+                chip.write_conf()
                 #inject
                 chip.inject()
                 while not chip['inj'].is_ready:
                     time.sleep(0.001)        
                 time.sleep(0.1)
-                
+                print("Set up the injection")
                 hits = chip.interpret_data_timestamp(chip['fifo'].get_data())
                 hit_table.append(hits)
                 hit_table.flush()  # Write to file immediately, so data is on disk
-                #print("Received %d injection in %.2f s (%.1f hits/s)" % (len(hits), delta_t, float(len(hits)) / delta_t))
-            
                 end_time = datetime.datetime.now()
                 time.sleep(1)
                 
