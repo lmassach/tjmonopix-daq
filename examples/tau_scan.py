@@ -25,8 +25,8 @@ IDB_DAC = 50
 IBIAS_DAC = 45#20 suggested for HV in script N_gapW4R2, 45dac suggested for Pmos flavor
 
 # Injected pulse
-DELAY = 800  # In clock units (40 MHz)
-WIDTH = 0
+DELAY = 200  # In clock units (40 MHz)
+WIDTH = 60
 REPEAT = 100  # Number of pulses injected
 
 # Limits for checking that the chip is behaving
@@ -38,8 +38,8 @@ HIT_DTYPE = np.dtype([
     ("col", "<u1"), ("row", "<u2"), ("le", "<u1"), ("te", "<u1"),
     ("noise", "<u1"), ("timestamp", "<u8")])
 
-ROWS = [1, 2, 3, 4]
-COLS = [15, 15, 15, 15]
+COLS = [1, 2, 3, 4]
+ROWS = [15, 15, 15, 15]
 
 
 def convert_option_list(l, dtype=int):
@@ -62,7 +62,7 @@ def inject_pixels(collist, rowlist):
     """ Set up the injection
     """
     for i in range (len(collist)):
-        chip.enable_injection(1, col_to_inject[i], row_to_inject[i])    
+        chip.enable_injection(1, collist[i], rowlist[i])    
         chip.write_conf()
     #inject
     chip.inject()
@@ -85,9 +85,9 @@ def set_pulse_time(delay = DELAY, width=WIDTH, repeat=REPEAT):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("-c", "--cols", required=COLS, nargs="+", type=int,
+    parser.add_argument("-c", "--cols", default=COLS, nargs="+", type=int,
                         help="The column range or value.")
-    parser.add_argument("-r", "--rows", required=ROWS, nargs="+", type=int,
+    parser.add_argument("-r", "--rows", default=ROWS, nargs="+", type=int,
                         help="The row range or value.")
     parser.add_argument("-i", "--injs", required=True, nargs="+", type=int,
                         help="The injection range or value.")
@@ -187,7 +187,7 @@ if __name__ == "__main__":
             print("%s BEGINNING ACQUISITION" % start_time.isoformat())            
             chip.enable_data_rx()
 
-            for i in range(200):
+            for i in range(60):
                 #print("Setting up the %dth injection", i)
                 set_pulse_time(delay = DELAY-i*3, width=WIDTH, repeat=REPEAT)
                 inject_pixels(col, row)
@@ -208,19 +208,18 @@ if __name__ == "__main__":
                 logger.info("Scan done in %s", end_time - start_time)
                 logger.info("Output file: %s", output_filename)
                 """
+            end_time = datetime.datetime.now()
+            hit_table.attrs.end_time = end_time.isoformat()
+            hit_table.attrs.duration = (end_time - start_time).total_seconds()
+            print("%s ACQUISITION END" % end_time.isoformat())
+            print("ACTUAL DURATION %s" % (end_time - start_time))
+    
     except Exception:
             print(traceback.format_exc())
     except KeyboardInterrupt:
             print(traceback.format_exc())
     except KeyboardInterrupt:
-        print(traceback.format_exc())
-
-    end_time = datetime.datetime.now()
-    hit_table.attrs.end_time = end_time.isoformat()
-    hit_table.attrs.duration = (end_time - start_time).total_seconds()
-    print("%s ACQUISITION END" % end_time.isoformat())
-    print("ACTUAL DURATION %s" % (end_time - start_time))
-
+            print(traceback.format_exc())
 
 
 
