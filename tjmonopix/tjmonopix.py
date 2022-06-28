@@ -1063,7 +1063,7 @@ class TJMonoPix(Dut):
 
 
 
-    def select_injection(self, col_to_inject, row_to_inject = None):
+    def select_injection(self, col_to_inject, row_to_inject = None, flavor=3):
         """Select the pixel or the column to inject """
         self['CONF_SR']['INJ_ROW'].setall(False)
         self['CONF_SR']['COL_PULSE_SEL'].setall(False)
@@ -1074,7 +1074,7 @@ class TJMonoPix(Dut):
             print("col injected: ", col_to_inject)
 
         else:
-            self.enable_injection(3, col_to_inject, row_to_inject)
+            self.enable_injection(flavor, col_to_inject, row_to_inject)
             print("pixel (col and row) injected", col_to_inject, row_to_inject)
         self.write_conf()
         return
