@@ -4,6 +4,9 @@ import os
 import subprocess
 import time
 import datetime
+import yaml
+import tables
+import signal
 import argparse
 import logging
 import traceback
@@ -35,6 +38,12 @@ COL_TO_INJECT = 66
 ROW_TO_INJECT = 10
 MAX_DELTA_CNT = 5
 
+
+OUTPUT_FILE = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S_tau_scan.h5")
+HIT_DTYPE = np.dtype([
+    ("col", "<u1"), ("row", "<u2"), ("le", "<u1"), ("te", "<u1"),
+    ("noise", "<u1"), ("timestamp", "<u8")])
+
 def convert_option_list(l, dtype=int):
     """Converts l to a numpy array.
     If l has two items, returns the range between the two items (both included).
@@ -62,12 +71,12 @@ if __name__ == "__main__":
                         help="The injection range or value.")
     parser.add_argument("-t", "--thrs", required=True, nargs="+", type=int,
                         help="The threshold range or value.")
-    parser.add_argument("-n", "--n-cols", type=int, default=10,
-                        help="Number of columns to scan at a time.")
+    parser.add_argument("-o", "--output", default=OUTPUT_FILE,
+                        help="Output .h5 file, default DATE_TIME_acq.h5")
 
     args = parser.parse_args()
-    cols = convert_option_list(args.cols)
-    rows = convert_option_list(args.rows)
+    col_to_inject = convert_option_list(args.cols)
+    row_to_inject = convert_option_list(args.rows)
     injs = convert_option_list(args.injs)
     thrs = convert_option_list(args.thrs)
 
@@ -76,11 +85,10 @@ if __name__ == "__main__":
     h = logging.StreamHandler()  # Log to console (stderr)
     h.setFormatter(f)
     logger.addHandler(h)
-    h = logging.FileHandler("ourTW.log")  # and also to file
+    h = logging.FileHandler("tau_scan.log")  # and also to file
     h.setFormatter(f)
     logger.addHandler(h)
-    logger.info("Launched script with args %s", args)
-    logger.info("Scanning %d cols, %d rows, %d injs and %d thrs", len(cols), len(rows), len(injs), len(thrs))
+    #logger.info("Launched script with args %s", args)
 
     try:
         # Init chip (with power reset, we want a power-cycle to avoid issues)
@@ -163,11 +171,13 @@ if __name__ == "__main__":
             signal.signal(signal.SIGINT, handle_ctrl_c)
 
             #logger.info("Testing random injection on pixels ")
-            for i in range(100):
+            for i in range(10):
                 if CTRL_C_RECEIVED:
                     break
                 #Set up the injection
-                chip.select_injection(col_to_inject, row_to_inject = None)
+                print("col to inject, row to inject", col_to_inject, row_to_inject)
+                chip.enable_injection(1, col_to_inject[0], row_to_inject[0])
+                #chip.select_injection(col_to_inject, row_to_inject = None, flavor=1)
                 print("Preparing chip for acquisition")
                 chip.enable_data_rx()
                 #inject
@@ -187,16 +197,16 @@ if __name__ == "__main__":
     
     except Exception:
             print(traceback.format_exc())
-        except KeyboardInterrupt:
+    except KeyboardInterrupt:
             print(traceback.format_exc())
     except KeyboardInterrupt:
         print(traceback.format_exc())
     # Configure Python to crash on CTRL+C again
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-
-    hit_table.attrs.end_time = end_time.isoformat()
-    hit_table.attrs.duration = (end_time - start_time).total_seconds()
+    end_time = datetime.datetime.now()
+    #hit_table.attrs.end_time = end_time.isoformat()
+    #hit_table.attrs.duration = (end_time - start_time).total_seconds()
     print("%s ACQUISITION END" % end_time.isoformat())
     print("ACTUAL DURATION %s" % (end_time - start_time))
 
