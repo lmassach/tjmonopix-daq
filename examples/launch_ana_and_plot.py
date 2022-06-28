@@ -5,8 +5,8 @@ Must be run with Python3."""
 # and then install tables (you may need to uninstall numexpr if you had already installed tables).
 #  - <https://download.lfd.uci.edu/pythonlibs/archived/cp37/numpy-1.21.6+mkl-cp37-cp37m-win_amd64.whl>
 #  - <https://download.visualstudio.microsoft.com/download/pr/6b6923b0-3045-4379-a96f-ef5506a65d5b/426A34C6F10EA8F7DA58A8C976B586AD84DD4BAB42A0CFDBE941F1763B7755E5/VC_redist.x64.exe>
-
-Complete list of dependencies: numpy scipy matplotlib tables
+#
+# Complete list of dependencies: numpy scipy matplotlib tables colorama
 import os
 import subprocess
 import argparse
@@ -18,7 +18,7 @@ import colorama
 colorama.init()
 
 PYTHON3_PATH = r'C:\Program Files\Python37\python.exe'
-PYTHON2_ACTIVATION_CMD = r'C:\Users\testuser\miniconda2\Scripts\activate.bat C:\Users\testuser\miniconda2'
+PYTHON2_ACTIVATION_CMD = rf'{os.environ["USERPROFILE"]}\miniconda2\Scripts\activate.bat {os.environ["USERPROFILE"]}\miniconda2'
 
 SCRIPT_DIR = os.path.dirname(__file__)
 ANA_SCRIPT = os.path.join(SCRIPT_DIR, "ourTWanalysis.py")
@@ -81,7 +81,7 @@ while True:
         print(f"Plotting  {scan_file}")
         if py3([PLOT_SCRIPT, "-f", ana_file[:-len("_ev.h5")]]).returncode:
             print(f"ERR Plotting failed, delete {ana_file} to retry")
-        
+
     if args.n > 0:
         time.sleep(args.n)
     else:
