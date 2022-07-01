@@ -60,20 +60,20 @@ def convert_option_list(l, dtype=int):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("-i", "--injs", default=[80], nargs="+", type=int,
-                        help="The injection range or value (default 80).")
-    for reg in ["VRESET", "ICASN", "IRESET", "ITHR", "IDB", "IBIAS"]:
+    parser.add_argument("-i", "--injs", default=[40], nargs="+", type=int,
+                        help="The injection range or value(s) (default 40).")
+    for reg in ["VRESET", "ICASN", "IRESET", "ITHR", "IBIAS"]:
         parser.add_argument("--" + reg.lower(), default=[vars()[reg + "_DAC"]],
                             nargs="+", type=int,
                             help="The %s range or value(s) (default %d)" % (
                                 reg, vars()[reg + "_DAC"]))
     parser.add_argument("-t", "--thrs", default=[IDB_DAC], nargs="+", type=int,
-                        help="The threshold range or value.")
+                        help="The threshold (IDB) range or value(s) (default %d)." % IDB_DAC)
     parser.add_argument("-n", default=1, type=int,
                         help="Number of injections.")
     args = parser.parse_args()
     injs = convert_option_list(args.injs)
-    thrs = convert_option_list(args.idb)
+    thrs = convert_option_list(args.thrs)
 
     try:
         # Init chip (with power reset, we want a power-cycle to avoid issues)
