@@ -5,6 +5,7 @@ import subprocess
 import time
 import datetime
 import argparse
+from itertools import product
 import logging
 import numpy as np
 from tjmonopix.tjmonopix import TJMonoPix
@@ -60,14 +61,19 @@ def convert_option_list(l, dtype=int):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("-i", "--injs", default=[80], nargs="+", type=int,
-                        help="The injection range or value.")
+                        help="The injection range or value (default 80).")
+    for reg in ["VRESET", "ICASN", "IRESET", "ITHR", "IDB", "IBIAS"]:
+        parser.add_argument("--" + reg.lower(), default=[vars()[reg + "_DAC"]],
+                            nargs="+", type=int,
+                            help="The %s range or value(s) (default %d)" % (
+                                reg, vars()[reg + "_DAC"]))
     parser.add_argument("-t", "--thrs", default=[IDB_DAC], nargs="+", type=int,
                         help="The threshold range or value.")
     parser.add_argument("-n", default=1, type=int,
                         help="Number of injections.")
     args = parser.parse_args()
     injs = convert_option_list(args.injs)
-    thrs = convert_option_list(args.thrs)
+    thrs = convert_option_list(args.idb)
 
     try:
         # Init chip (with power reset, we want a power-cycle to avoid issues)
@@ -137,13 +143,19 @@ if __name__ == "__main__":
         chip.enable_hitor(chip.fl_n, COL_TO_INJECT, 223)
         chip.write_conf()
         
-        for th in thrs:
-            chip.set_idb_dacunits(th, 1)
-            for inj in injs:
-                chip.set_vl_dacunits(VH_DAC - inj,1)
-                chip.write_conf()
-                chip.inject()
-                time.sleep(0.1)
+        for vreset, icasn, ireset, ithr, ibias in product(*map(convert_option_list, [args.vreset, args.icasn, args.ireset, args.ithr, args.ibias])):
+            chip.set_vreset_dacunits(int(vreset), 1)
+            chip.set_ireset_dacunits(int(ireset),1,1)
+            chip.set_ithr_dacunits(int(ithr),1)
+            chip.set_icasn_dacunits(int(icasn),1)
+            chip.set_ibias_dacunits(int(ibias),1)
+            for th in thrs:
+                chip.set_idb_dacunits(th, 1)
+                for inj in injs:
+                    chip.set_vl_dacunits(VH_DAC - inj,1)
+                    chip.write_conf()
+                    time.sleep(0.1)
+                    chip.inject()
         
         print("End of script")
     except:
