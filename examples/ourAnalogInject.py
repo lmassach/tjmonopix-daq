@@ -36,7 +36,7 @@ CALCAP = 20
 DELAY = 800  # In clock units (40 MHz)
 WIDTH = 150
 REPEAT = 100  # Number of pulses injected
-COL_TO_INJECT = 0
+COL_TO_INJECT = 50
 # Rows are determined by the analog pixels (220-223)
 
 
@@ -112,6 +112,18 @@ if __name__ == "__main__":
         chip['inj'].set_phase(0)
         chip['inj'].set_en(0)
         
+        # Mask everything except rows 220-223
+        chip.mask_all()
+        chip['CONF_SR'][chip.SET['fl']].setall(False)
+        chip['CONF_SR']['MASKH'][220] = True
+        chip['CONF_SR']['MASKH'][221] = True
+        chip['CONF_SR']['MASKH'][222] = True
+        chip['CONF_SR']['MASKH'][223] = True
+        chip['CONF_SR']['MASKV'][chip.fl_n * 112 + COL_TO_INJECT] = True
+        chip.write_conf()
+        chip['CONF_SR'][chip.SET['fl']].setall(True)
+        chip.write_conf()
+        
         # Enable analog output and injection to analog pixels
         chip.enable_analog(col="all")
         chip["inj"].set_repeat(args.n)
@@ -119,7 +131,11 @@ if __name__ == "__main__":
         chip['CONF_SR']['COL_PULSE_SEL'][(chip.fl_n * 112) + COL_TO_INJECT] = True
         
         # Enable HITOR
-        chip.enable_hitor(1, COL_TO_INJECT, 221)
+        chip.enable_hitor(chip.fl_n, COL_TO_INJECT, 220)
+        chip.enable_hitor(chip.fl_n, COL_TO_INJECT, 221)
+        chip.enable_hitor(chip.fl_n, COL_TO_INJECT, 222)
+        chip.enable_hitor(chip.fl_n, COL_TO_INJECT, 223)
+        chip.write_conf()
         
         for th in thrs:
             chip.set_idb_dacunits(th, 1)
