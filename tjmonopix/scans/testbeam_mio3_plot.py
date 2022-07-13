@@ -45,22 +45,25 @@ if __name__ == "__main__":
     print([(a, b) for a, b in np.argwhere(h > m)])
 
     # ToT histogram
-    plt.hist((tjm_hits["te"] - tjm_hits["le"]) & 0x3f, bins=64, range=[0, 64])
+    tot = (tjm_hits["te"] - tjm_hits["le"]) & 0x3f
+    h, _, _ = plt.hist(tot, bins=64, range=[0, 64])
     plt.xlabel("ToT [25 ns]")
     plt.ylabel("Hit count")
     plt.title("ToT")
     plt.grid(axis='y')
+    plt.ylim(0, np.max(h[5:]))
     plt.savefig(output_file + "_tot.png")
     plt.clf()
 
     # Hit delta-t histogram
-    dt = np.diff(tjm_hits["timestamp"]) / 40
+    tot_mask = tot > 5
+    dt = np.diff(tjm_hits["timestamp"][tot_mask]) / 640
     # Set the maximum to include 98% of the samples
     m = np.ceil(np.quantile(dt, 0.98) * 1.2)
     plt.hist(dt, bins=100, range=[0, m])
     plt.xlabel("$\\Delta t$ between hits [$\\mu$s]")
     plt.ylabel("Count")
-    plt.title("Interval between successive hits")
+    plt.title("Interval between successive hits (only ToT > 5)")
     plt.grid(axis='y')
     plt.yscale('log')
     plt.savefig(output_file + "_hit-dt.png")
