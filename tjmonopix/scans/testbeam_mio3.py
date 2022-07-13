@@ -1,5 +1,6 @@
 """TJMonopix acquisition scan for a fixed time."""
 import datetime
+import argparse
 
 from tjmonopix.tjmonopix import TJMonoPix
 from tjmonopix.scans.simple_scan import SimpleScan
@@ -9,7 +10,6 @@ HITOR_COL, HITOR_ROW = 50, 102
 
 
 if __name__ == "__main__":
-    import argparse
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('-d', '--data', required=True,
                         type=lambda x: x + datetime.datetime.now().strftime("_%Y-%m-%d_%H-%M-%S"),
