@@ -3,7 +3,8 @@ import yaml
 from tqdm import tqdm
 
 from tjmonopix.scan_base import ScanBase
-from tjmonopix.analysis import analysis
+# from tjmonopix.analysis import analysis
+import tjmonopix.analysis.interpreter_idx as interpreter_idx
 from tjmonopix.analysis import plotting
 
 
@@ -36,7 +37,7 @@ class SimpleScan(ScanBase):
             tlu_delay = kwargs.pop('tlu_delay', 8)
             self.dut.set_tlu(tlu_delay)
         if with_timestamp:
-            self.dut.set_timestamp("rx_1")
+            self.dut.set_timestamp("rx1")
 
         self.dut.reset_ibias()
 
@@ -55,11 +56,11 @@ class SimpleScan(ScanBase):
                 pre_scanned = scanned
                 scanned = time.time() - t0
                 temp = self.dut.get_temperature()
-                # TODO: log this to file only, let tqdm handle stdout
-                self.logger.info('time=%.0fs dat=%d rate=%.3fk/s temp=%.2fC' %
-                                 (scanned, cnt, (cnt - pre_cnt) / (scanned - pre_scanned) / 1024, temp))
+                # # TODO: log this to file only, let tqdm handle stdout
+                # self.logger.info('time=%.0fs dat=%d rate=%.3fk/s temp=%.2fC' %
+                                 # (scanned, cnt, (cnt - pre_cnt) / max(1e-3, scanned - pre_scanned) / 1024, temp))
 
-                pbar.set_postfix(ordered_dict={'Data Rate': '{:.3f} k/s'.format((cnt - pre_cnt) / (scanned - pre_scanned) / 1024), 'Temp': '{:5.1f} C'.format(temp)})
+                pbar.set_postfix(ordered_dict={'Data Rate': '{:.3f} k/s'.format((cnt - pre_cnt) / max(1e-3, scanned - pre_scanned) / 1024), 'Temp': '{:5.1f} C'.format(temp)})
                 pbar.update(scanned - pre_scanned)
                 if scanned + 2 > scan_timeout and scan_timeout > 0:
                     break
@@ -74,7 +75,7 @@ class SimpleScan(ScanBase):
         if with_timestamp:
             self.dut.stop_all()
             self.meta_data_table.attrs.timestamp_status = yaml.dump(
-                self.dut["timestamp"].get_configuration())
+                self.dut["timestamp_rx1"].get_configuration())
         if with_tlu:
             self.dut.stop_tlu()
             self.meta_data_table.attrs.tlu_status = yaml.dump(
@@ -88,11 +89,15 @@ class SimpleScan(ScanBase):
     def analyze(self, data_file=None, cluster_hits=False):
         if data_file is None:
             data_file = self.output_filename + '.h5'
+        out_file = data_file[:-3] + "_interpreted.h5"
 
-        with analysis.Analysis(raw_data_file=data_file, cluster_hits=cluster_hits) as a:
-            a.analyze_data()
-            self.analyzed_data_file = a.analyzed_data_file
-        return self.analyzed_data_file
+        # with analysis.Analysis(raw_data_file=data_file, cluster_hits=cluster_hits) as a:
+        #     a.analyze_data()
+        #     self.analyzed_data_file = a.analyzed_data_file
+        # return self.analyzed_data_file
+
+        interpreter_idx.interpret_idx_h5(data_file, out_file)
+        return out_file
 
     @classmethod
     def plot(self, analyzed_data_file=None):
