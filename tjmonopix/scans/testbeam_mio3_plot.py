@@ -27,8 +27,7 @@ if __name__ == "__main__":
                              range=[[0, 112], [0, 224]])
     # Set the maximum so that 98% of the pixels do not overflow
     hf = h.reshape(-1)
-    m = np.quantile(hf[hf>0], 0.98)
-    m = np.ceil(m * 1.2)
+    m = np.ceil(np.quantile(hf[hf>0], 0.98) * 1.2)
     # Color in red pixels that overflow
     cm = mpl.cm.get_cmap('viridis')
     cm.set_bad('#ff3333')
@@ -57,8 +56,7 @@ if __name__ == "__main__":
     # Hit delta-t histogram
     dt = np.diff(tjm_hits["timestamp"]) / 40
     # Set the maximum to include 98% of the samples
-    m = np.quantile(dt, 0.98)
-    m = np.ceil(m * 1.2)
+    m = np.ceil(np.quantile(dt, 0.98) * 1.2)
     plt.hist(dt, bins=100, range=[0, m])
     plt.xlabel("$\\Delta t$ between hits [$\\mu$s]")
     plt.ylabel("Count")
@@ -67,3 +65,35 @@ if __name__ == "__main__":
     plt.yscale('log')
     plt.savefig(output_file + "_hit-dt.png")
     plt.clf()
+
+    # Trigger delta-t histogram
+    dt = np.diff(trg_hits["timestamp"]) / 640
+    # Set the maximum to include 98% of the samples
+    m = np.ceil(np.quantile(dt, 0.98) * 1.2)
+    plt.hist(dt, bins=100, range=[0, m])
+    plt.xlabel("$\\Delta t$ between triggers [$\\mu$s]")
+    plt.ylabel("Count")
+    plt.title("Interval between successive triggers")
+    plt.grid(axis='y')
+    plt.yscale('log')
+    plt.savefig(output_file + "_trg-dt.png")
+    plt.clf()
+
+    # Divide hits by trigger
+    trg_idxs = np.argwhere(~mask).reshape(-1)
+    if len(trg_idxs) and trg_idxs[0] == 0:
+        trg_idxs = trg_idxs[1:]
+    if len(trg_idxs):
+        tjm_hits_split = np.split(tjm_hits, trg_idxs - np.arange(len(trg_idxs)))
+        # This is a list of pixel hits arrays
+
+        # Number of hits per trigger
+        n = np.fromiter((len(x) for x in tjm_hits_split), np.int32, len(tjm_hits_split))
+        r = [np.floor(np.quantile(n, 0.02) * 0.8), np.ceil(np.quantile(n, 0.98) * 1.2)]
+        plt.hist(n, bins=min(100, int(r[1] - r[0])), range=r)
+        plt.xlabel("N. hits per trigger")
+        plt.ylabel("Hits")
+        plt.title("Hits per trigger")
+        plt.grid(axis='y')
+        plt.savefig(output_file + "_trg-cnt.png")
+        plt.clf()
