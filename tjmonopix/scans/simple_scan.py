@@ -3,7 +3,6 @@ import yaml
 from tqdm import tqdm
 
 from tjmonopix.scan_base import ScanBase
-# from tjmonopix.analysis import analysis
 import tjmonopix.analysis.interpreter_idx as interpreter_idx
 from tjmonopix.analysis import plotting
 
@@ -56,18 +55,12 @@ class SimpleScan(ScanBase):
                 pre_scanned = scanned
                 scanned = time.time() - t0
                 temp = self.dut.get_temperature()
-                # # TODO: log this to file only, let tqdm handle stdout
-                # self.logger.info('time=%.0fs dat=%d rate=%.3fk/s temp=%.2fC' %
-                                 # (scanned, cnt, (cnt - pre_cnt) / max(1e-3, scanned - pre_scanned) / 1024, temp))
 
                 pbar.set_postfix(ordered_dict={'Data Rate': '{:.3f} k/s'.format((cnt - pre_cnt) / max(1e-3, scanned - pre_scanned) / 1024), 'Temp': '{:5.1f} C'.format(temp)})
                 pbar.update(scanned - pre_scanned)
                 if scanned + 2 > scan_timeout and scan_timeout > 0:
                     break
-                elif scanned < 30:
-                    time.sleep(1)
-                else:
-                    time.sleep(1)
+                time.sleep(1)
             time.sleep(max(0, scan_timeout - scanned))
         pbar.close()
 
@@ -91,11 +84,6 @@ class SimpleScan(ScanBase):
             data_file = self.output_filename + '.h5'
         out_file = data_file[:-3] + "_interpreted.h5"
 
-        # with analysis.Analysis(raw_data_file=data_file, cluster_hits=cluster_hits) as a:
-        #     a.analyze_data()
-        #     self.analyzed_data_file = a.analyzed_data_file
-        # return self.analyzed_data_file
-
         interpreter_idx.interpret_idx_h5(data_file, out_file)
         return out_file
 
@@ -111,5 +99,3 @@ if __name__ == "__main__":
     scan = SimpleScan()
     scan.scan()
     scan.analyze()
-
-    # SimpleScan.analyze("/media/silab/Maxtor/tjmonopix-data/measurements/source_scan/modified_process/pmos/W04R08_-6_-6_idb30.h5", create_plots=True)
