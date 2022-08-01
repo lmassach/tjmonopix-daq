@@ -25,9 +25,10 @@ IDB_DAC = 50
 IBIAS_DAC = 45#20 suggested for HV in script N_gapW4R2, 45dac suggested for Pmos flavor
 
 # Injected pulse
-DELAY = 200  # In clock units (40 MHz)
+DELAY = 500  # In clock units (40 MHz)
 WIDTH = 60
 REPEAT = 100  # Number of pulses injected
+dt = 2
 
 # Limits for checking that the chip is behaving
 MAX_NOISY_PIXELS = 300  # Crash if more than this noisy pixels
@@ -38,8 +39,8 @@ HIT_DTYPE = np.dtype([
     ("col", "<u1"), ("row", "<u2"), ("le", "<u1"), ("te", "<u1"),
     ("noise", "<u1"), ("timestamp", "<u8")])
 
-COLS = [1, 2, 3, 4]
-ROWS = [15, 15, 15, 15]
+COLS = [50]
+ROWS = []
 
 
 def convert_option_list(l, dtype=int):
@@ -89,6 +90,8 @@ if __name__ == "__main__":
                         help="The column range or value.")
     parser.add_argument("-r", "--rows", default=ROWS, nargs="+", type=int,
                         help="The row range or value.")
+    parser.add_argument("-n", "--n_pixels", nargs="+", type=int,
+                        help="number of pixels to inject.")
     parser.add_argument("-i", "--injs", required=True, nargs="+", type=int,
                         help="The injection range or value.")
     parser.add_argument("-t", "--thrs", required=True, nargs="+", type=int,
@@ -101,6 +104,11 @@ if __name__ == "__main__":
     row = convert_option_list(args.rows)
     injs = convert_option_list(args.injs)
     thrs = convert_option_list(args.thrs)
+    n_pixels = convert_option_list(args.n_pixels)
+
+    row = [i for i in range (n_pixels)]
+    col = [np.unique(col)[0] for i in range (n_pixels)]
+    DELAY = int(n_pixels * 35) + 100 #Using parameters found already
 
     logger = logging.getLogger("main")
     f = logging.Formatter("%(asctime)s %(levelname)-8s %(name)-15s %(message)s", '%Y-%m-%d %H:%M:%S')
@@ -183,31 +191,27 @@ if __name__ == "__main__":
             hit_table.attrs.power_status = chip.get_power_status()
             hit_table.attrs.config_status = yaml.dump(chip.get_configuration())
             hit_table.attrs.set_status = chip.SET
+            hit_table.attrs.pulse_DELAY = DELAY
+            hit_table.attrs.pulse_WIDTH = WIDTH
+            hit_table.attrs.pulse_dt = dt
             hit_table.attrs.start_time = start_time.isoformat()
-            print("%s BEGINNING ACQUISITION" % start_time.isoformat())            
+            logger.info("%s BEGINNING ACQUISITION" % start_time.isoformat())            
             chip.enable_data_rx()
-
-            for i in range(60):
-                #print("Setting up the %dth injection", i)
-                set_pulse_time(delay = DELAY-i*3, width=WIDTH, repeat=REPEAT)
+            
+            expected = REPEAT* len(col)
+            counts = expected
+            logger.info('DT [40 MhZ clock counts], hit read, hit expected')
+            while counts > expected-15:
+                set_pulse_time(delay = DELAY, width=WIDTH, repeat=REPEAT)
                 inject_pixels(col, row)
                 hits = chip.interpret_data_timestamp(chip['fifo'].get_data())
                 hit_table.append(hits)
                 hit_table.flush()  # Write to file immediately, so data is on disk
                 end_time = datetime.datetime.now()
-                print("DT = %d, %d read hits, %d expected" % (DELAY-i*3, len(hits), REPEAT*len(col)) )
+                counts = len(hits)
+                logger.info('%d %d %d' % ( DELAY, counts, expected))
                 time.sleep(1)
-                """
-                logger.info("Launching the scan...")
-                scans = InjectionScan(dut=chip)
-                start_time = datetime.datetime.now()
-                output_filename = scans.start(
-                    collist=cols, rowlist=rows, injlist=injs, thlist=thrs,
-                    phaselist=None, with_mon=False, n_mask_col=args.n_cols, debug=4)
-                end_time = datetime.datetime.now()
-                logger.info("Scan done in %s", end_time - start_time)
-                logger.info("Output file: %s", output_filename)
-                """
+                DELAY = DELAY - dt
             end_time = datetime.datetime.now()
             hit_table.attrs.end_time = end_time.isoformat()
             hit_table.attrs.duration = (end_time - start_time).total_seconds()

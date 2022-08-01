@@ -28,7 +28,7 @@ from tjmonopix.tjmonopix import TJMonoPix, FakeTJMonoPix
 # Dopo il 13 marzo, con il flavor PMOS, usiamo questi settings
 VRESET_DAC = 43  # 35 in default conf, suggested 43 in N_gap
 ICASN_DAC = 0
-IRESET_DAC = 2
+IRESET_DAC = 127#2
 ITHR_DAC = 10  # 5 in default conf, in N_gapW4R2 ith = 10 for both pmos and hv flavor
 IDB_DAC = 50
 IBIAS_DAC = 45  # 20 suggested for HV in script N_gapW4R2, 45 suggested for Pmos flavor
@@ -82,6 +82,11 @@ if __name__ == "__main__":
     chip['data_rx'].CONF_START_READ = 66  # default 6
     chip['data_rx'].CONF_STOP_READ = 68  # default 7
     chip['data_rx'].CONF_STOP = 105  # default 45
+    
+    
+    chip['CONF_SR'][chip.SET['fl']].setall(True)
+    chip.write_conf()
+    
     print("Chip initialized")
     time.sleep(1)
 

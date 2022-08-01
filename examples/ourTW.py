@@ -131,6 +131,7 @@ if __name__ == "__main__":
         ithr = chip.set_ithr_dacunits(ITHR_DAC,1)
         idb = chip.set_idb_dacunits(IDB_DAC,1)
         ibias = chip.set_ibias_dacunits(IBIAS_DAC,1)
+        icasn = chip.set_icasn_dacunits(ICASN_DAC,1)
         chip.write_conf()
         logger.info("Analog front-end setup done")
         time.sleep(1)
@@ -161,27 +162,32 @@ if __name__ == "__main__":
         chip['inj'].set_repeat(REPEAT)
         chip['inj'].set_phase(0)
         chip['inj'].set_en(0)
-        # logger.info("Testing injection on pixel (%d,%d)", COL_TO_INJECT, ROW_TO_INJECT)
-        # chip.select_injection(COL_TO_INJECT, ROW_TO_INJECT)
-        # chip['data_rx'].set_en(False)
-        # chip.set_monoread()
-        # for _ in range(5):
-            # chip['fifo'].reset()
-            # time.sleep(0.002)
-        # chip["inj"].start()
-        # while not chip['inj'].is_ready:
-            # time.sleep(0.001)
-        # time.sleep(0.2)
-        # ix = chip.interpret_data(chip['fifo'].get_data())
-        # mask = (ix["col"] == COL_TO_INJECT) & (ix["row"] == ROW_TO_INJECT)
-        # if abs(len(ix[mask]) - REPEAT) > MAX_DELTA_CNT:
-            # logger.critical("Hits on injected pixel (%d) too different from number of injection pulses (%d), aborting", len(ix[mask]), REPEAT)
-            # raise RuntimeError("Incorrect number of hits on injected pixel")
-        # if len(ix) - len(ix[mask]) > MAX_RESIDUAL_OCCUPANCY:
-            # logger.critical("Too high occupancy on non-injected pixels (%d hits), aborting", len(ix) - len(ix[mask]))
-            # raise RuntimeError("Too high occupancy on non-injected pixels")
-        # logger.info("Injection check done")
+        
+        """
+        logger.info("Testing injection on pixel (%d,%d)", COL_TO_INJECT, ROW_TO_INJECT)
+        chip.select_injection(COL_TO_INJECT, ROW_TO_INJECT)
+        chip['data_rx'].set_en(False)
+        chip.set_monoread()
+        for _ in range(5):
+            chip['fifo'].reset()
+            time.sleep(0.002)
+        chip["inj"].start()
+        while not chip['inj'].is_ready:
+            time.sleep(0.001)
+        time.sleep(0.2)
+        ix = chip.interpret_data(chip['fifo'].get_data())
+        print('ix', ix)
+        mask = (ix["col"] == COL_TO_INJECT) & (ix["row"] == ROW_TO_INJECT)
+        if abs(len(ix[mask]) - REPEAT) > MAX_DELTA_CNT:
+            logger.critical("Hits on injected pixel (%d) too different from number of injection pulses (%d), aborting", len(ix[mask]), REPEAT)
+            raise RuntimeError("Incorrect number of hits on injected pixel")
+        if len(ix) - len(ix[mask]) > MAX_RESIDUAL_OCCUPANCY:
+            logger.critical("Too high occupancy on non-injected pixels (%d hits), aborting", len(ix) - len(ix[mask]))
+            raise RuntimeError("Too high occupancy on non-injected pixels")
+        logger.info("Injection check done")
         time.sleep(1)
+        """
+
 
         logger.info("Launching the scan...")
         scans = InjectionScan(dut=chip)
