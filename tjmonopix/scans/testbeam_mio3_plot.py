@@ -23,10 +23,10 @@ if __name__ == "__main__":
     trg_hits = hits[~mask]  # Trigger pulses
 
     # Prepare figure
-    plt.figure(figsize=(6.4*2, 4.8*3))
+    plt.figure(figsize=(6.4*3, 4.8*3))
 
     # Hitmap
-    plt.subplot(321)
+    plt.subplot(331)
     h, _, _ = np.histogram2d(tjm_hits["col"], tjm_hits["row"], bins=[112, 224],
                              range=[[0, 112], [0, 224]])
     # Set the maximum so that 98% of the pixels do not overflow
@@ -45,9 +45,9 @@ if __name__ == "__main__":
     # List pixels that overflow (may be useful for detecting noisy pixels)
     print("List of pixels with > %d hits" % m)
     print([(a, b) for a, b in np.argwhere(h > m)])
-
+    
     # ToT histogram
-    plt.subplot(322)
+    plt.subplot(332)
     tot = (tjm_hits["te"] - tjm_hits["le"]) & 0x3f
     h, _, _ = plt.hist(tot, bins=64, range=[0, 64])
     plt.xlabel("ToT [25 ns]")
@@ -56,8 +56,17 @@ if __name__ == "__main__":
     plt.grid(axis='y')
     plt.ylim(0, np.max(h[5:]) * 1.2)
 
+    #ToT colormap
+    plt.subplot(333)
+    plt.hist2d(tjm_hits["col"], tjm_hits["row"], bins=[112, 224], range=[[0, 112], [0, 224]], weights=tot)
+    plt.colorbar().set_label("ToT")
+    plt.xlabel("Column")
+    plt.ylabel("Row")
+    plt.title("ToT colormap")    
+    
+    
     # Hit delta-t histogram
-    plt.subplot(323)
+    plt.subplot(334)
     tot_mask = tot > 5
     dt = np.diff(tjm_hits["timestamp"][tot_mask]) / 640
     # Set the maximum to include 98% of the samples
@@ -70,7 +79,7 @@ if __name__ == "__main__":
     plt.yscale('log')
 
     # Trigger delta-t histogram
-    plt.subplot(324)
+    plt.subplot(335)
     dt = np.diff(trg_hits["timestamp"]) / 640
     # Set the maximum to include 98% of the samples
     m = np.ceil(np.quantile(dt, 0.98) * 1.2)
@@ -90,7 +99,7 @@ if __name__ == "__main__":
         tjm_hits_split = np.split(tjm_hits, trg_idxs - np.arange(len(trg_idxs)))
 
         # Number of hits per trigger
-        plt.subplot(325)
+        plt.subplot(336)
         n = np.fromiter((len(x) for x in tjm_hits_split), np.int32, len(tjm_hits_split))
         r = [np.floor(np.quantile(n, 0.02) * 0.8), np.ceil(np.quantile(n, 0.98) * 1.2)]
         plt.hist(n, bins=min(100, int(r[1] - r[0])), range=r)
@@ -100,7 +109,7 @@ if __name__ == "__main__":
         plt.grid(axis='y')
 
         # Delta-t between hit and trigger
-        plt.subplot(326)
+        plt.subplot(337)
         dt = np.concatenate([
             tjm_hits_split[i]["timestamp"] - (hits["timestamp"][trg_idxs[i-1]] if i else 0)
             for i in range(len(tjm_hits_split))]) / 640
