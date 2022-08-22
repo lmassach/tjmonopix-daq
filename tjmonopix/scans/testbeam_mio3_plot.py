@@ -22,7 +22,11 @@ if __name__ == "__main__":
     tjm_hits = hits[mask]  # Actual pixel hits
     trg_hits = hits[~mask]  # Trigger pulses
 
+    # Prepare figure
+    plt.figure(figsize=(6.4*3, 4.8*3))
+
     # Hitmap
+    plt.subplot(331)
     h, _, _ = np.histogram2d(tjm_hits["col"], tjm_hits["row"], bins=[112, 224],
                              range=[[0, 112], [0, 224]])
     # Set the maximum so that 98% of the pixels do not overflow
@@ -38,24 +42,31 @@ if __name__ == "__main__":
     plt.xlabel("Column")
     plt.ylabel("Row")
     plt.title("Hit map")
-    plt.savefig(output_file + "_hitmap.png")
-    plt.clf()
     # List pixels that overflow (may be useful for detecting noisy pixels)
     print("List of pixels with > %d hits" % m)
     print([(a, b) for a, b in np.argwhere(h > m)])
-
+    
     # ToT histogram
+    plt.subplot(332)
     tot = (tjm_hits["te"] - tjm_hits["le"]) & 0x3f
     h, _, _ = plt.hist(tot, bins=64, range=[0, 64])
     plt.xlabel("ToT [25 ns]")
     plt.ylabel("Hit count")
     plt.title("ToT")
     plt.grid(axis='y')
-    plt.ylim(0, np.max(h[5:]))
-    plt.savefig(output_file + "_tot.png")
-    plt.clf()
+    plt.ylim(0, np.max(h[5:]) * 1.2)
 
+    #ToT colormap
+    plt.subplot(333)
+    plt.hist2d(tjm_hits["col"], tjm_hits["row"], bins=[112, 224], range=[[0, 112], [0, 224]], weights=tot)
+    plt.colorbar().set_label("ToT")
+    plt.xlabel("Column")
+    plt.ylabel("Row")
+    plt.title("ToT colormap")    
+    
+    
     # Hit delta-t histogram
+    plt.subplot(334)
     tot_mask = tot > 5
     dt = np.diff(tjm_hits["timestamp"][tot_mask]) / 640
     # Set the maximum to include 98% of the samples
@@ -63,13 +74,12 @@ if __name__ == "__main__":
     plt.hist(dt, bins=100, range=[0, m])
     plt.xlabel("$\\Delta t$ between hits [$\\mu$s]")
     plt.ylabel("Count")
-    plt.title("Interval between successive hits (only ToT > 5)")
+    plt.title("Interval between successive hits timestamps (only ToT > 5)")
     plt.grid(axis='y')
     plt.yscale('log')
-    plt.savefig(output_file + "_hit-dt.png")
-    plt.clf()
 
     # Trigger delta-t histogram
+    plt.subplot(335)
     dt = np.diff(trg_hits["timestamp"]) / 640
     # Set the maximum to include 98% of the samples
     m = np.ceil(np.quantile(dt, 0.98) * 1.2)
@@ -79,18 +89,17 @@ if __name__ == "__main__":
     plt.title("Interval between successive triggers")
     plt.grid(axis='y')
     plt.yscale('log')
-    plt.savefig(output_file + "_trg-dt.png")
-    plt.clf()
 
     # Divide hits by trigger
     trg_idxs = np.argwhere(~mask).reshape(-1)
     if len(trg_idxs) and trg_idxs[0] == 0:
         trg_idxs = trg_idxs[1:]
     if len(trg_idxs):
+        # This is a list with one array of pixel hits per each trigger
         tjm_hits_split = np.split(tjm_hits, trg_idxs - np.arange(len(trg_idxs)))
-        # This is a list of pixel hits arrays
 
         # Number of hits per trigger
+        plt.subplot(336)
         n = np.fromiter((len(x) for x in tjm_hits_split), np.int32, len(tjm_hits_split))
         r = [np.floor(np.quantile(n, 0.02) * 0.8), np.ceil(np.quantile(n, 0.98) * 1.2)]
         plt.hist(n, bins=min(100, int(r[1] - r[0])), range=r)
@@ -98,5 +107,17 @@ if __name__ == "__main__":
         plt.ylabel("Hits")
         plt.title("Hits per trigger")
         plt.grid(axis='y')
-        plt.savefig(output_file + "_trg-cnt.png")
-        plt.clf()
+
+        # Delta-t between hit and trigger
+        plt.subplot(337)
+        dt = np.concatenate([
+            tjm_hits_split[i]["timestamp"] - (hits["timestamp"][trg_idxs[i-1]] if i else 0)
+            for i in range(len(tjm_hits_split))]) / 640
+        r = [np.floor(np.quantile(dt, 0.02) * 0.8), np.ceil(np.quantile(dt, 0.98) * 1.2)]
+        plt.hist(dt, bins=100, range=r)
+        plt.xlabel("$t_{trg} - t_{hit}$ [$\\mu$s]")
+        plt.ylabel("Hit count")
+        plt.title("Interval between trigger and hit timestamps")
+        plt.grid(axis='y')
+
+    plt.savefig(output_file + "_plots.png")
