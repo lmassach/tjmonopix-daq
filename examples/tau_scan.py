@@ -106,9 +106,18 @@ if __name__ == "__main__":
     thrs = convert_option_list(args.thrs)
     n_pixels = convert_option_list(args.n_pixels)
 
-    row = [i for i in range (n_pixels)]
-    col = [np.unique(col)[0] for i in range (n_pixels)]
-    DELAY = int(n_pixels * 35) + 100 #Using parameters found already
+    col = [i for i in range (n_pixels)]
+    row = [np.unique(row)[0] for i in range (n_pixels)]
+    DELAY = int(n_pixels * 35) +150 #35 and 300 decided by other measurements
+    print(DELAY, col, row)
+    """
+    #If you want inject a whole column: 
+    ri = [i for i in range(224)]
+    ci = [50 for i in range(224)]
+    row = row + ri
+    col = col + ci
+    DELAY = int(n_pixels * 35) + 300  + int(224 * 35) #35 and 300 decided by other measurements; int(224 * 35) only if inject more than one column
+    """
 
     logger = logging.getLogger("main")
     f = logging.Formatter("%(asctime)s %(levelname)-8s %(name)-15s %(message)s", '%Y-%m-%d %H:%M:%S')
@@ -119,7 +128,6 @@ if __name__ == "__main__":
     h.setFormatter(f)
     logger.addHandler(h)
     #logger.info("Launched script with args %s", args)
-
     try:
         # Init chip (with power reset, we want a power-cycle to avoid issues)
         logger.info("Initializing chip...")
@@ -201,7 +209,7 @@ if __name__ == "__main__":
             expected = REPEAT* len(col)
             counts = expected
             logger.info('DT [40 MhZ clock counts], hit read, hit expected')
-            while counts > expected-15:
+            while counts > expected-30:
                 set_pulse_time(delay = DELAY, width=WIDTH, repeat=REPEAT)
                 inject_pixels(col, row)
                 hits = chip.interpret_data_timestamp(chip['fifo'].get_data())
