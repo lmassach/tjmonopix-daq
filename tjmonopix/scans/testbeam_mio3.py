@@ -5,7 +5,7 @@ import argparse
 from tjmonopix.tjmonopix import TJMonoPix
 from tjmonopix.scans.simple_scan import SimpleScan
 
-NOISY_PIXELS = []  # TODO Acquire noise and put a list of noisy pixels here as (col, row) tuples
+NOISY_PIXELS = [(62, 97)]  # TODO Acquire noise and put a list of noisy pixels here as (col, row) tuples
 # [(1, 141), (1, 203), (3, 210), (11, 68), (18, 27), (23, 142), (28, 0), (30, 66), (31, 165), (38, 186), (41, 31), (42, 16), (43, 17), (53, 60), (53, 124), (56, 187), (62, 97), (64, 183), (65, 114), (66, 152), (71, 64), (73, 221), (76, 44), (79, 154), (79, 155), (79, 162), (85, 106), (86, 61), (88, 164), (89, 12), (89, 178), (91, 78), (92, 50), (93, 129), (93, 167), (95, 141), (97, 152), (98, 18), (99, 76), (104, 79), (104, 118), (108, 123), (108, 129), (108, 207), (109, 64), (111, 156)]
 HITOR_COL, HITOR_ROW = 50, 102
 
@@ -17,6 +17,8 @@ if __name__ == "__main__":
                         help='Name of data file without extension (date and time will be appended)')
     parser.add_argument("-t", '--scan-timeout', type=int, default=10,
                         help="Scan time in seconds (default 10, 0 means forever)")
+    parser.add_argument("-a", '--automasking', default=True,
+                        help="If True the standard automasking mode il selected")
     args = parser.parse_args()
 
     chip = TJMonoPix(conf=r"C:\Users\belle2\tjmonopix-daq\tjmonopix\tjmonopix_mio3.yaml", no_power_reset=False)
@@ -29,10 +31,11 @@ if __name__ == "__main__":
 
     ####### MASK NOISY PIXELS ######
     chip.unmask_all()
-
-    for col, row in NOISY_PIXELS:
-        chip.mask(1, col, row)
-
+    if args.automasking is True:
+        chip.standard_auto_mask()    
+    else: 
+        for col, row in NOISY_PIXELS:
+            chip.mask(1, col, row)
     # Enable hitor on a single pixel (must be unmasked by MASKD and/or MASKV)
     chip.enable_hitor(1, HITOR_COL, HITOR_ROW)
     chip.write_conf()
@@ -40,7 +43,7 @@ if __name__ == "__main__":
     ####### CONFIGURE THE FRONT END ######
     chip.set_vreset_dacunits(43, 1)
     chip.set_icasn_dacunits(0, 1)
-    chip.set_ireset_dacunits(2, 1, 1)
+    chip.set_ireset_dacunits(127, 1, 1)
     chip.set_ithr_dacunits(10, 1)
     chip.set_idb_dacunits(50, 1)
     chip.set_ibias_dacunits(45, 1)
